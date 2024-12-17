@@ -1,0 +1,20 @@
+syntax = "proto3";
+option go_package = "kademlia/service";
+
+service KademliaService {
+        rpc PING (PingCheck) returns (NodeInfo) {}
+        rpc FIND_NODE(NodeID) returns (stream NodeInfo) {}
+}
+
+message PingCheck {
+}
+
+message NodeInfo {
+        string ip = 1;
+        int32 port = 2;
+        string id = 3;
+}
+
+message NodeID {
+        string id = 1;
+}
