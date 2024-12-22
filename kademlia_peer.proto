@@ -3,10 +3,26 @@ option go_package = "kademlia/service";
 
 service KademliaService {
         rpc PING (PingCheck) returns (NodeInfo) {}
-        rpc FIND_NODE(NodeID) returns (stream NodeInfo) {}
+        rpc STORE (StoreRequest) returns (StoreResult) {}
+        rpc FIND_NODE (NodeID) returns (stream NodeInfo) {}
+        rpc FIND_VALUE (Key) returns (Value) {}
+}
+
+message StoreRequest {
+        int32 key = 1;
+        int32 value = 2;
+}
+
+message StoreResult {
+        bool result = 1;
+        string message = 2;
 }
 
 message PingCheck {
+}
+
+message NodeID {
+        string id = 1;
 }
 
 message NodeInfo {
@@ -15,6 +31,10 @@ message NodeInfo {
         string id = 3;
 }
 
-message NodeID {
-        string id = 1;
+message Key {
+        int32 key = 1;
+}
+
+message Value {
+        int32 value = 1;
 }

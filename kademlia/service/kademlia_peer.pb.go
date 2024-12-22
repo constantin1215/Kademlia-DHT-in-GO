@@ -20,6 +20,112 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type StoreRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Key   int32 `protobuf:"varint,1,opt,name=key,proto3" json:"key,omitempty"`
+	Value int32 `protobuf:"varint,2,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (x *StoreRequest) Reset() {
+	*x = StoreRequest{}
+	mi := &file_kademlia_peer_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoreRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoreRequest) ProtoMessage() {}
+
+func (x *StoreRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_kademlia_peer_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoreRequest.ProtoReflect.Descriptor instead.
+func (*StoreRequest) Descriptor() ([]byte, []int) {
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *StoreRequest) GetKey() int32 {
+	if x != nil {
+		return x.Key
+	}
+	return 0
+}
+
+func (x *StoreRequest) GetValue() int32 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
+}
+
+type StoreResult struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Result  bool   `protobuf:"varint,1,opt,name=result,proto3" json:"result,omitempty"`
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+}
+
+func (x *StoreResult) Reset() {
+	*x = StoreResult{}
+	mi := &file_kademlia_peer_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *StoreResult) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StoreResult) ProtoMessage() {}
+
+func (x *StoreResult) ProtoReflect() protoreflect.Message {
+	mi := &file_kademlia_peer_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StoreResult.ProtoReflect.Descriptor instead.
+func (*StoreResult) Descriptor() ([]byte, []int) {
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *StoreResult) GetResult() bool {
+	if x != nil {
+		return x.Result
+	}
+	return false
+}
+
+func (x *StoreResult) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 type PingCheck struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -28,7 +134,7 @@ type PingCheck struct {
 
 func (x *PingCheck) Reset() {
 	*x = PingCheck{}
-	mi := &file_kademlia_peer_proto_msgTypes[0]
+	mi := &file_kademlia_peer_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -40,7 +146,7 @@ func (x *PingCheck) String() string {
 func (*PingCheck) ProtoMessage() {}
 
 func (x *PingCheck) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[0]
+	mi := &file_kademlia_peer_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -53,7 +159,52 @@ func (x *PingCheck) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PingCheck.ProtoReflect.Descriptor instead.
 func (*PingCheck) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{0}
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{2}
+}
+
+type NodeID struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+}
+
+func (x *NodeID) Reset() {
+	*x = NodeID{}
+	mi := &file_kademlia_peer_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *NodeID) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*NodeID) ProtoMessage() {}
+
+func (x *NodeID) ProtoReflect() protoreflect.Message {
+	mi := &file_kademlia_peer_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use NodeID.ProtoReflect.Descriptor instead.
+func (*NodeID) Descriptor() ([]byte, []int) {
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *NodeID) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
 }
 
 type NodeInfo struct {
@@ -68,7 +219,7 @@ type NodeInfo struct {
 
 func (x *NodeInfo) Reset() {
 	*x = NodeInfo{}
-	mi := &file_kademlia_peer_proto_msgTypes[1]
+	mi := &file_kademlia_peer_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -80,7 +231,7 @@ func (x *NodeInfo) String() string {
 func (*NodeInfo) ProtoMessage() {}
 
 func (x *NodeInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[1]
+	mi := &file_kademlia_peer_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -93,7 +244,7 @@ func (x *NodeInfo) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeInfo.ProtoReflect.Descriptor instead.
 func (*NodeInfo) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{1}
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *NodeInfo) GetIp() string {
@@ -117,29 +268,29 @@ func (x *NodeInfo) GetId() string {
 	return ""
 }
 
-type NodeID struct {
+type Key struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
 	unknownFields protoimpl.UnknownFields
 
-	Id string `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Key int32 `protobuf:"varint,1,opt,name=key,proto3" json:"key,omitempty"`
 }
 
-func (x *NodeID) Reset() {
-	*x = NodeID{}
-	mi := &file_kademlia_peer_proto_msgTypes[2]
+func (x *Key) Reset() {
+	*x = Key{}
+	mi := &file_kademlia_peer_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *NodeID) String() string {
+func (x *Key) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*NodeID) ProtoMessage() {}
+func (*Key) ProtoMessage() {}
 
-func (x *NodeID) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[2]
+func (x *Key) ProtoReflect() protoreflect.Message {
+	mi := &file_kademlia_peer_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -150,37 +301,97 @@ func (x *NodeID) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use NodeID.ProtoReflect.Descriptor instead.
-func (*NodeID) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{2}
+// Deprecated: Use Key.ProtoReflect.Descriptor instead.
+func (*Key) Descriptor() ([]byte, []int) {
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *NodeID) GetId() string {
+func (x *Key) GetKey() int32 {
 	if x != nil {
-		return x.Id
+		return x.Key
 	}
-	return ""
+	return 0
+}
+
+type Value struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Value int32 `protobuf:"varint,1,opt,name=value,proto3" json:"value,omitempty"`
+}
+
+func (x *Value) Reset() {
+	*x = Value{}
+	mi := &file_kademlia_peer_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Value) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Value) ProtoMessage() {}
+
+func (x *Value) ProtoReflect() protoreflect.Message {
+	mi := &file_kademlia_peer_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Value.ProtoReflect.Descriptor instead.
+func (*Value) Descriptor() ([]byte, []int) {
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *Value) GetValue() int32 {
+	if x != nil {
+		return x.Value
+	}
+	return 0
 }
 
 var File_kademlia_peer_proto protoreflect.FileDescriptor
 
 var file_kademlia_peer_proto_rawDesc = []byte{
 	0x0a, 0x13, 0x6b, 0x61, 0x64, 0x65, 0x6d, 0x6c, 0x69, 0x61, 0x5f, 0x70, 0x65, 0x65, 0x72, 0x2e,
-	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x0b, 0x0a, 0x09, 0x50, 0x69, 0x6e, 0x67, 0x43, 0x68, 0x65,
-	0x63, 0x6b, 0x22, 0x3e, 0x0a, 0x08, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x12, 0x0e,
-	0x0a, 0x02, 0x69, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x70, 0x12, 0x12,
-	0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x04, 0x70, 0x6f,
-	0x72, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02,
-	0x69, 0x64, 0x22, 0x18, 0x0a, 0x06, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x44, 0x12, 0x0e, 0x0a, 0x02,
-	0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69, 0x64, 0x32, 0x57, 0x0a, 0x0f,
-	0x4b, 0x61, 0x64, 0x65, 0x6d, 0x6c, 0x69, 0x61, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x12,
-	0x1f, 0x0a, 0x04, 0x50, 0x49, 0x4e, 0x47, 0x12, 0x0a, 0x2e, 0x50, 0x69, 0x6e, 0x67, 0x43, 0x68,
-	0x65, 0x63, 0x6b, 0x1a, 0x09, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x22, 0x00,
-	0x12, 0x23, 0x0a, 0x09, 0x46, 0x49, 0x4e, 0x44, 0x5f, 0x4e, 0x4f, 0x44, 0x45, 0x12, 0x07, 0x2e,
-	0x4e, 0x6f, 0x64, 0x65, 0x49, 0x44, 0x1a, 0x09, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66,
-	0x6f, 0x22, 0x00, 0x30, 0x01, 0x42, 0x12, 0x5a, 0x10, 0x6b, 0x61, 0x64, 0x65, 0x6d, 0x6c, 0x69,
-	0x61, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63, 0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f,
-	0x33,
+	0x70, 0x72, 0x6f, 0x74, 0x6f, 0x22, 0x36, 0x0a, 0x0c, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65,
+	0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x10, 0x0a, 0x03, 0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01,
+	0x28, 0x05, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
+	0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x3f, 0x0a,
+	0x0b, 0x53, 0x74, 0x6f, 0x72, 0x65, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x12, 0x16, 0x0a, 0x06,
+	0x72, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x06, 0x72, 0x65,
+	0x73, 0x75, 0x6c, 0x74, 0x12, 0x18, 0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18,
+	0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x0b,
+	0x0a, 0x09, 0x50, 0x69, 0x6e, 0x67, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x22, 0x18, 0x0a, 0x06, 0x4e,
+	0x6f, 0x64, 0x65, 0x49, 0x44, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x01, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x02, 0x69, 0x64, 0x22, 0x3e, 0x0a, 0x08, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66,
+	0x6f, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x70, 0x18, 0x01, 0x20, 0x01, 0x28, 0x09, 0x52, 0x02, 0x69,
+	0x70, 0x12, 0x12, 0x0a, 0x04, 0x70, 0x6f, 0x72, 0x74, 0x18, 0x02, 0x20, 0x01, 0x28, 0x05, 0x52,
+	0x04, 0x70, 0x6f, 0x72, 0x74, 0x12, 0x0e, 0x0a, 0x02, 0x69, 0x64, 0x18, 0x03, 0x20, 0x01, 0x28,
+	0x09, 0x52, 0x02, 0x69, 0x64, 0x22, 0x17, 0x0a, 0x03, 0x4b, 0x65, 0x79, 0x12, 0x10, 0x0a, 0x03,
+	0x6b, 0x65, 0x79, 0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x03, 0x6b, 0x65, 0x79, 0x22, 0x1d,
+	0x0a, 0x05, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x12, 0x14, 0x0a, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65,
+	0x18, 0x01, 0x20, 0x01, 0x28, 0x05, 0x52, 0x05, 0x76, 0x61, 0x6c, 0x75, 0x65, 0x32, 0x9d, 0x01,
+	0x0a, 0x0f, 0x4b, 0x61, 0x64, 0x65, 0x6d, 0x6c, 0x69, 0x61, 0x53, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x12, 0x1f, 0x0a, 0x04, 0x50, 0x49, 0x4e, 0x47, 0x12, 0x0a, 0x2e, 0x50, 0x69, 0x6e, 0x67,
+	0x43, 0x68, 0x65, 0x63, 0x6b, 0x1a, 0x09, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f,
+	0x22, 0x00, 0x12, 0x26, 0x0a, 0x05, 0x53, 0x54, 0x4f, 0x52, 0x45, 0x12, 0x0d, 0x2e, 0x53, 0x74,
+	0x6f, 0x72, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x0c, 0x2e, 0x53, 0x74, 0x6f,
+	0x72, 0x65, 0x52, 0x65, 0x73, 0x75, 0x6c, 0x74, 0x22, 0x00, 0x12, 0x23, 0x0a, 0x09, 0x46, 0x49,
+	0x4e, 0x44, 0x5f, 0x4e, 0x4f, 0x44, 0x45, 0x12, 0x07, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x44,
+	0x1a, 0x09, 0x2e, 0x4e, 0x6f, 0x64, 0x65, 0x49, 0x6e, 0x66, 0x6f, 0x22, 0x00, 0x30, 0x01, 0x12,
+	0x1c, 0x0a, 0x0a, 0x46, 0x49, 0x4e, 0x44, 0x5f, 0x56, 0x41, 0x4c, 0x55, 0x45, 0x12, 0x04, 0x2e,
+	0x4b, 0x65, 0x79, 0x1a, 0x06, 0x2e, 0x56, 0x61, 0x6c, 0x75, 0x65, 0x22, 0x00, 0x42, 0x12, 0x5a,
+	0x10, 0x6b, 0x61, 0x64, 0x65, 0x6d, 0x6c, 0x69, 0x61, 0x2f, 0x73, 0x65, 0x72, 0x76, 0x69, 0x63,
+	0x65, 0x62, 0x06, 0x70, 0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
 
 var (
@@ -195,19 +406,27 @@ func file_kademlia_peer_proto_rawDescGZIP() []byte {
 	return file_kademlia_peer_proto_rawDescData
 }
 
-var file_kademlia_peer_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_kademlia_peer_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_kademlia_peer_proto_goTypes = []any{
-	(*PingCheck)(nil), // 0: PingCheck
-	(*NodeInfo)(nil),  // 1: NodeInfo
-	(*NodeID)(nil),    // 2: NodeID
+	(*StoreRequest)(nil), // 0: StoreRequest
+	(*StoreResult)(nil),  // 1: StoreResult
+	(*PingCheck)(nil),    // 2: PingCheck
+	(*NodeID)(nil),       // 3: NodeID
+	(*NodeInfo)(nil),     // 4: NodeInfo
+	(*Key)(nil),          // 5: Key
+	(*Value)(nil),        // 6: Value
 }
 var file_kademlia_peer_proto_depIdxs = []int32{
-	0, // 0: KademliaService.PING:input_type -> PingCheck
-	2, // 1: KademliaService.FIND_NODE:input_type -> NodeID
-	1, // 2: KademliaService.PING:output_type -> NodeInfo
-	1, // 3: KademliaService.FIND_NODE:output_type -> NodeInfo
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
+	2, // 0: KademliaService.PING:input_type -> PingCheck
+	0, // 1: KademliaService.STORE:input_type -> StoreRequest
+	3, // 2: KademliaService.FIND_NODE:input_type -> NodeID
+	5, // 3: KademliaService.FIND_VALUE:input_type -> Key
+	4, // 4: KademliaService.PING:output_type -> NodeInfo
+	1, // 5: KademliaService.STORE:output_type -> StoreResult
+	4, // 6: KademliaService.FIND_NODE:output_type -> NodeInfo
+	6, // 7: KademliaService.FIND_VALUE:output_type -> Value
+	4, // [4:8] is the sub-list for method output_type
+	0, // [0:4] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -224,7 +443,7 @@ func file_kademlia_peer_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_kademlia_peer_proto_rawDesc,
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
