@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	"math/big"
 	"strconv"
 )
 
@@ -17,7 +18,7 @@ func calculateNodeId() string {
 	return encryptedString
 }
 
-func calculateDistance(hash1, hash2 string) (int64, error) {
+func calculateDistance(hash1, hash2 string) (uint8, error) {
 	if len(hash1) != len(hash2) {
 		return 0, errors.New("hashes do not match in size")
 	}
@@ -26,31 +27,31 @@ func calculateDistance(hash1, hash2 string) (int64, error) {
 		return 0, errors.New("hashes uneven")
 	}
 
-	result := int64(0)
+	result := big.NewInt(0)
 	for i := 0; i < len(hash1); i += 2 {
 		hex1val1, err := getHexStrDecValue(hash1[i])
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 		hex1val2, err := getHexStrDecValue(hash1[i+1])
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 		hex2val1, err := getHexStrDecValue(hash2[i])
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 		hex2val2, err := getHexStrDecValue(hash2[i+1])
 		if err != nil {
-			return -1, err
+			return 0, err
 		}
 		hex1 := int64(hex1val1*16 + hex1val2)
 		hex2 := int64(hex2val1*16 + hex2val2)
 		xorResult := hex1 ^ hex2
-		result = (result << 8) | xorResult
+		result = result.Lsh(result, 8).Or(result, big.NewInt(xorResult))
 	}
 
-	return result, nil
+	return uint8(result.BitLen() - 1), nil
 }
 
 func getHexStrDecValue(character uint8) (uint8, error) {
