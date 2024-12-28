@@ -4,7 +4,7 @@ option go_package = "kademlia/service";
 service KademliaService {
         rpc PING (PingCheck) returns (NodeInfo) {}
         rpc STORE (StoreRequest) returns (StoreResult) {}
-        rpc FIND_NODE (LookupRequest) returns (stream NodeInfo) {}
+        rpc FIND_NODE (LookupRequest) returns (LookupResponse) {}
         rpc FIND_VALUE (Key) returns (Value) {}
 }
 
@@ -22,14 +22,24 @@ message StoreResult {
 }
 
 message LookupRequest {
-        NodeInfo requester = 1;
+        optional NodeInfo requester = 1;
         string targetNodeId = 2;
+        optional uint64 magicCookie = 3;
 }
 
 message NodeInfo {
         string ip = 1;
         int32 port = 2;
         string id = 3;
+}
+
+message NodeInfoLookup {
+        NodeInfo nodeDetails = 1;
+        uint32 distanceToTarget = 2;
+}
+
+message LookupResponse {
+        repeated NodeInfoLookup nodes = 1;
 }
 
 message Key {

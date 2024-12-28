@@ -4,7 +4,6 @@ import (
 	"context"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
-	"io"
 	"log"
 	ks "peer/kademlia/service"
 	"time"
@@ -36,6 +35,7 @@ func clientPerformPING(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
 
 	pingResult, err := client.PING(ctx, &ks.PingCheck{})
 	if err != nil {
+		log.Println("Failed to perform PING")
 		return nil, err
 	}
 
@@ -44,41 +44,16 @@ func clientPerformPING(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
 	return pingResult, nil
 }
 
-func clientPerformLookup(id string, client ks.KademliaServiceClient) error {
+func clientPerformLookup(targetNodeId string, magicCookie uint64, client ks.KademliaServiceClient) ([]*ks.NodeInfoLookup, error) {
 	log.Println("Performing LOOKUP")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	stream, err := client.FIND_NODE(ctx, &ks.LookupRequest{TargetNodeId: id, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: int32(port)}})
+	response, err := client.FIND_NODE(ctx, &ks.LookupRequest{TargetNodeId: targetNodeId, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: int32(port)}, MagicCookie: &magicCookie})
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	received := 0
-	for {
-		node, recvErr := stream.Recv()
-		if recvErr == io.EOF {
-			log.Printf("Received EOF")
-			break
-		}
-		if node == nil {
-			break
-		}
-		bucket, distErr := calculateDistance(node.Id, id)
-		if distErr != nil {
-			log.Printf("Error calculating distance: %v", distErr)
-			break
-		}
-		updateRoutingTable(bucket, node)
-		received++
-	}
-	log.Printf("Received %d nodes data", received)
-
-	err = stream.CloseSend()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return response.Nodes, nil
 }

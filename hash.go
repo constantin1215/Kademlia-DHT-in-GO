@@ -18,7 +18,7 @@ func calculateNodeId() string {
 	return encryptedString
 }
 
-func calculateDistance(hash1, hash2 string) (uint8, error) {
+func calculateDistance(hash1, hash2 string) (uint16, error) {
 	if len(hash1) != len(hash2) {
 		return 0, errors.New("hashes do not match in size")
 	}
@@ -51,7 +51,7 @@ func calculateDistance(hash1, hash2 string) (uint8, error) {
 		result = result.Lsh(result, 8).Or(result, big.NewInt(xorResult))
 	}
 
-	return uint8(result.BitLen() - 1), nil
+	return uint16(result.BitLen()), nil
 }
 
 func getHexStrDecValue(character uint8) (uint8, error) {

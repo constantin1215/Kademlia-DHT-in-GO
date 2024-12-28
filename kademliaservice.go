@@ -5,15 +5,17 @@ import (
 	"fmt"
 	"google.golang.org/grpc"
 	"log"
+	"math/rand/v2"
 	"net"
 	ks "peer/kademlia/service"
+	"sort"
+	"strconv"
 )
 
 var (
-	id                      = calculateNodeId()
-	routingTable            = initRoutingTable()
-	quickAccessRoutingTable = make(map[string]*ks.NodeInfo)
-	data                    = make(map[int32]int32)
+	id           = calculateNodeId()
+	routingTable = initRoutingTable()
+	data         = make(map[int32]int32)
 )
 
 const (
@@ -33,61 +35,72 @@ func (s *server) STORE(_ context.Context, req *ks.StoreRequest) (*ks.StoreResult
 	return &ks.StoreResult{Result: true, Message: "Data stored successfully!"}, nil
 }
 
-func (s *server) FIND_NODE(request *ks.LookupRequest, stream grpc.ServerStreamingServer[ks.NodeInfo]) error {
+func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.LookupResponse, error) {
+	log.Printf("FIND_NODE: Request received: %v", request)
+
 	bucket, err := calculateDistance(request.TargetNodeId, id)
 	if err != nil {
 		fmt.Println("Error calculating distance, invalid character detected in node ID.")
-		return err
+		return nil, err
 	}
 
-	log.Printf("Looking in bucket %d", bucket)
+	var nodesQueue []*ks.NodeInfoLookup
+	var result []*ks.NodeInfoLookup
+	visited := make(map[string]bool)
+	if request.Requester != nil {
+		nodesQueue = gatherClosestNodes(bucket, request.Requester.Id, request.TargetNodeId)
+	} else {
+		nodesQueue = gatherClosestNodes(bucket, "", request.TargetNodeId)
+	}
+	log.Printf("Gathered nodes %v", nodesQueue)
 
-	needed := k
-	index := 0
-	initialBucket := bucket
-	bucketLen := len(routingTable[bucket])
-	decrease := true
-	reachedZero := 0
+	if request.MagicCookie == nil {
+		magicCookie := rand.Uint64()
+		_ = copy(result, nodesQueue)
+		for len(nodesQueue) != 0 {
+			node := nodesQueue[0]
 
-	for needed != 0 {
-		if reachedZero == 2 {
-			break
-		}
-		if index < bucketLen {
-			log.Printf("Checking bucket %d index %d node %v", bucket, index, routingTable[bucket][index])
-			err := stream.Send(routingTable[bucket][index])
-			if err != nil {
-				break
+			if !visited[node.NodeDetails.Id] {
+				result = append(result, node)
+
+				client, conn, errClient := createClient(node.NodeDetails.Ip)
+				if errClient != nil {
+					return nil, errClient
+				}
+
+				lookup, errLookup := clientPerformLookup(request.TargetNodeId, magicCookie, client)
+				errConn := conn.Close()
+				if errConn != nil {
+					return nil, errConn
+				}
+
+				if errLookup != nil {
+					return nil, errLookup
+				}
+
+				log.Printf("Node %s returned the following nodes: %v", node.NodeDetails.Id, lookup)
+				nodesQueue = append(nodesQueue, lookup...)
+				visited[node.NodeDetails.Id] = true
 			}
-			log.Printf("Send %v", routingTable[bucket][index])
-			index++
-			needed--
-		} else {
-			if bucket == 0 && initialBucket == 255 { // already checked all buckets
-				break
-			}
 
-			if bucket == 0 { // if reached the bottom switch direction
-				reachedZero++
-				decrease = false
-				bucket = initialBucket
-			}
-
-			if decrease { // initially decrease bucket from starting point
-				bucket--
-			} else {
-				bucket++
-			}
-
-			index = 0
-			bucketLen = len(routingTable[bucket])
+			nodesQueue = nodesQueue[1:]
 		}
 	}
 
-	log.Printf("Adding %v to routing table", request.Requester)
-	updateRoutingTable(initialBucket, request.Requester)
+	if request.Requester != nil {
+		updateRoutingTable(bucket, request.Requester)
+	}
 
-	return nil
+	log.Println("Lookup finished!")
+
+	if len(result) != 0 {
+		sort.Slice(result, func(i, j int) bool {
+			return result[i].DistanceToTarget < result[j].DistanceToTarget
+		})
+		return &ks.LookupResponse{Nodes: result[:k]}, nil
+	}
+
+	return &ks.LookupResponse{Nodes: nodesQueue[:k]}, nil
 }
 
 func (s *server) FIND_VALUE(_ context.Context, keyRequest *ks.Key) (*ks.Value, error) {
@@ -102,7 +115,7 @@ func startService() {
 
 	s := grpc.NewServer()
 	ks.RegisterKademliaServiceServer(s, &server{})
-	log.Printf("server listening at %v", lis.Addr())
+	log.Printf("server listening at %s", ip+":"+strconv.Itoa(port))
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

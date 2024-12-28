@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"math/rand/v2"
 	"net"
 	"os/exec"
+	ks "peer/kademlia/service"
 	"strings"
 )
 
@@ -56,12 +58,12 @@ func joinNetwork() {
 
 	if len(networkIps) != 0 {
 		for i := range networkIps {
-			if networkIps[i] == ip || networkIps[i] == "" {
+			if networkIps[0] == networkIps[i] || networkIps[i] == ip || networkIps[i] == "" { // networkIps[0] == networkIps[i] is meant to skip the first IP because that one is the gateway
 				continue
 			}
 			log.Printf("Trying to dial %s", networkIps[i])
-			client, conn, err := createClient(networkIps[i])
-			if err != nil {
+			client, conn, errClient := createClient(networkIps[i])
+			if errClient != nil {
 				continue
 			} else {
 				pingResult, errPing := clientPerformPING(client)
@@ -69,23 +71,51 @@ func joinNetwork() {
 					log.Printf("Error while pinging %v. Moving on to another peer...", networkIps[i])
 					continue
 				}
+				magicCookie := rand.Uint64()
+				nodes, errLookup := clientPerformLookup(id, magicCookie, client)
+				closeErr := conn.Close()
+				if closeErr != nil {
+					return
+				}
 
-				errLookup := clientPerformLookup(id, client)
 				if errLookup != nil {
 					log.Printf("Error while performing a lookup on %v. Moving on to another peer...", networkIps[i])
 					continue
+				}
+
+				log.Printf("Received nodes data %v", nodes)
+				neighboursResults := make([]*ks.NodeInfoLookup, 0, len(nodes))
+				for _, node := range nodes {
+					newNodeClient, newNodeConn, newNodeClientErr := createClient(node.NodeDetails.Ip)
+					if newNodeClientErr != nil {
+						continue
+					}
+					newNodeLookupResult, newNodeLookupErr := clientPerformLookup(id, magicCookie, newNodeClient)
+					if newNodeLookupErr != nil {
+						return
+					}
+					neighboursResults = append(neighboursResults, newNodeLookupResult...)
+					closeNewNodeConnErr := newNodeConn.Close()
+					if closeNewNodeConnErr != nil {
+						continue
+					}
+					updateRoutingTable(uint16(node.DistanceToTarget), node.NodeDetails)
+				}
+
+				for _, node := range neighboursResults {
+					updateRoutingTable(uint16(node.DistanceToTarget), node.NodeDetails)
 				}
 
 				bucket, errDist := calculateDistance(pingResult.Id, id)
 				if errDist != nil {
 					return
 				}
+
 				updateRoutingTable(bucket, pingResult)
 				hasBootstrapped = true
-				closeErr := conn.Close()
-				if closeErr != nil {
-					return
-				}
+				//log.Printf("My routing table is %v", routingTable)
+
+				log.Println("Successfully joined the network.")
 				break
 			}
 		}

@@ -31,7 +31,7 @@ const (
 type KademliaServiceClient interface {
 	PING(ctx context.Context, in *PingCheck, opts ...grpc.CallOption) (*NodeInfo, error)
 	STORE(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResult, error)
-	FIND_NODE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[NodeInfo], error)
+	FIND_NODE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*LookupResponse, error)
 	FIND_VALUE(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Value, error)
 }
 
@@ -63,24 +63,15 @@ func (c *kademliaServiceClient) STORE(ctx context.Context, in *StoreRequest, opt
 	return out, nil
 }
 
-func (c *kademliaServiceClient) FIND_NODE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[NodeInfo], error) {
+func (c *kademliaServiceClient) FIND_NODE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*LookupResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	stream, err := c.cc.NewStream(ctx, &KademliaService_ServiceDesc.Streams[0], KademliaService_FIND_NODE_FullMethodName, cOpts...)
+	out := new(LookupResponse)
+	err := c.cc.Invoke(ctx, KademliaService_FIND_NODE_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[LookupRequest, NodeInfo]{ClientStream: stream}
-	if err := x.ClientStream.SendMsg(in); err != nil {
-		return nil, err
-	}
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	return x, nil
+	return out, nil
 }
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type KademliaService_FIND_NODEClient = grpc.ServerStreamingClient[NodeInfo]
 
 func (c *kademliaServiceClient) FIND_VALUE(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Value, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
@@ -98,7 +89,7 @@ func (c *kademliaServiceClient) FIND_VALUE(ctx context.Context, in *Key, opts ..
 type KademliaServiceServer interface {
 	PING(context.Context, *PingCheck) (*NodeInfo, error)
 	STORE(context.Context, *StoreRequest) (*StoreResult, error)
-	FIND_NODE(*LookupRequest, grpc.ServerStreamingServer[NodeInfo]) error
+	FIND_NODE(context.Context, *LookupRequest) (*LookupResponse, error)
 	FIND_VALUE(context.Context, *Key) (*Value, error)
 	mustEmbedUnimplementedKademliaServiceServer()
 }
@@ -116,8 +107,8 @@ func (UnimplementedKademliaServiceServer) PING(context.Context, *PingCheck) (*No
 func (UnimplementedKademliaServiceServer) STORE(context.Context, *StoreRequest) (*StoreResult, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method STORE not implemented")
 }
-func (UnimplementedKademliaServiceServer) FIND_NODE(*LookupRequest, grpc.ServerStreamingServer[NodeInfo]) error {
-	return status.Errorf(codes.Unimplemented, "method FIND_NODE not implemented")
+func (UnimplementedKademliaServiceServer) FIND_NODE(context.Context, *LookupRequest) (*LookupResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method FIND_NODE not implemented")
 }
 func (UnimplementedKademliaServiceServer) FIND_VALUE(context.Context, *Key) (*Value, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FIND_VALUE not implemented")
@@ -179,16 +170,23 @@ func _KademliaService_STORE_Handler(srv interface{}, ctx context.Context, dec fu
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KademliaService_FIND_NODE_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(LookupRequest)
-	if err := stream.RecvMsg(m); err != nil {
-		return err
+func _KademliaService_FIND_NODE_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(LookupRequest)
+	if err := dec(in); err != nil {
+		return nil, err
 	}
-	return srv.(KademliaServiceServer).FIND_NODE(m, &grpc.GenericServerStream[LookupRequest, NodeInfo]{ServerStream: stream})
+	if interceptor == nil {
+		return srv.(KademliaServiceServer).FIND_NODE(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KademliaService_FIND_NODE_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KademliaServiceServer).FIND_NODE(ctx, req.(*LookupRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
-
-// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type KademliaService_FIND_NODEServer = grpc.ServerStreamingServer[NodeInfo]
 
 func _KademliaService_FIND_VALUE_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Key)
@@ -224,16 +222,14 @@ var KademliaService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _KademliaService_STORE_Handler,
 		},
 		{
+			MethodName: "FIND_NODE",
+			Handler:    _KademliaService_FIND_NODE_Handler,
+		},
+		{
 			MethodName: "FIND_VALUE",
 			Handler:    _KademliaService_FIND_VALUE_Handler,
 		},
 	},
-	Streams: []grpc.StreamDesc{
-		{
-			StreamName:    "FIND_NODE",
-			Handler:       _KademliaService_FIND_NODE_Handler,
-			ServerStreams: true,
-		},
-	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "kademlia_peer.proto",
 }
