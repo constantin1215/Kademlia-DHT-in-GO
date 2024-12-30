@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 	ks "peer/kademlia/service"
-	"strconv"
 )
 
 var (
@@ -22,7 +21,7 @@ func initRoutingTable() map[uint16][]*ks.NodeInfo {
 
 func updateRoutingTable(bucket uint16, newInfo *ks.NodeInfo) {
 	insertedNew := false
-	quickAccessKey := strconv.Itoa(int(bucket)) + "-" + newInfo.Id
+	quickAccessKey := newInfo.Id
 	if len(routingTable[bucket]) == k {
 		log.Println("Bucket full. Checking for node to evict")
 		for i, node := range routingTable[bucket] {

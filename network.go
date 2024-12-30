@@ -58,7 +58,8 @@ func joinNetwork() {
 
 	if len(networkIps) != 0 {
 		for i := range networkIps {
-			if networkIps[0] == networkIps[i] || networkIps[i] == ip || networkIps[i] == "" { // networkIps[0] == networkIps[i] is meant to skip the first IP because that one is the gateway
+			// networkIps[0] == networkIps[i] is meant to skip the first IP because that one is the gateway
+			if networkIps[0] == networkIps[i] || networkIps[i] == ip || networkIps[i] == "" {
 				continue
 			}
 			log.Printf("Trying to dial %s", networkIps[i])

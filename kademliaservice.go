@@ -10,6 +10,8 @@ import (
 	ks "peer/kademlia/service"
 	"sort"
 	"strconv"
+	"sync"
+	"time"
 )
 
 var (
@@ -19,7 +21,8 @@ var (
 )
 
 const (
-	k = 4
+	k     = 4
+	alpha = 3
 )
 
 type server struct {
@@ -35,6 +38,61 @@ func (s *server) STORE(_ context.Context, req *ks.StoreRequest) (*ks.StoreResult
 	return &ks.StoreResult{Result: true, Message: "Data stored successfully!"}, nil
 }
 
+func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
+	ch := make(chan struct{})
+	go func() {
+		wg.Wait()
+		close(ch)
+	}()
+	select {
+	case <-ch:
+		return true
+	case <-time.After(timeout):
+		return false
+	}
+}
+
+func processNode(targetId string, magicCookie uint64, result map[string]*ks.NodeInfoLookup, mutexResult *sync.Mutex,
+	waitGroup *sync.WaitGroup, nodeChan chan *ks.NodeInfoLookup) {
+	defer waitGroup.Done()
+
+	for node := range nodeChan {
+		log.Printf("Processing %v", node)
+
+		mutexResult.Lock()
+		result[node.NodeDetails.Id] = node
+		mutexResult.Unlock()
+
+		client, conn, errClient := createClient(node.NodeDetails.Ip)
+		if errClient != nil {
+			continue
+		}
+
+		lookup, errLookup := clientPerformLookup(targetId, magicCookie, client)
+		errConn := conn.Close()
+		if errConn != nil {
+			continue
+		}
+
+		if errLookup != nil {
+			continue
+		}
+
+		log.Printf("Node %s returned the following nodes: %v", node.NodeDetails.Ip, lookup)
+		for _, infoLookup := range lookup {
+			mutexResult.Lock()
+			_, ok := result[infoLookup.NodeDetails.Id]
+			mutexResult.Unlock()
+			if !ok {
+				go func() {
+					nodeChan <- infoLookup
+					log.Printf("(Added to chan) Node %s sent the following info: %v", node.NodeDetails.Ip, infoLookup)
+				}()
+			}
+		}
+	}
+}
+
 func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.LookupResponse, error) {
 	log.Printf("FIND_NODE: Request received: %v", request)
 
@@ -44,63 +102,67 @@ func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.Lo
 		return nil, err
 	}
 
-	var nodesQueue []*ks.NodeInfoLookup
-	var result []*ks.NodeInfoLookup
-	visited := make(map[string]bool)
+	var gatheredNodes []*ks.NodeInfoLookup
+	result := make(map[string]*ks.NodeInfoLookup)
+
 	if request.Requester != nil {
-		nodesQueue = gatherClosestNodes(bucket, request.Requester.Id, request.TargetNodeId)
+		gatheredNodes = gatherClosestNodes(bucket, request.Requester.Id, request.TargetNodeId)
 	} else {
-		nodesQueue = gatherClosestNodes(bucket, "", request.TargetNodeId)
+		gatheredNodes = gatherClosestNodes(bucket, "", request.TargetNodeId)
 	}
-	log.Printf("Gathered nodes %v", nodesQueue)
+	log.Printf("Gathered nodes %v", gatheredNodes)
 
 	if request.MagicCookie == nil {
 		magicCookie := rand.Uint64()
-		_ = copy(result, nodesQueue)
-		for len(nodesQueue) != 0 {
-			node := nodesQueue[0]
+		for _, node := range gatheredNodes {
+			result[node.NodeDetails.Id] = node
+		}
+		nodeChan := make(chan *ks.NodeInfoLookup, 10)
+		var wg sync.WaitGroup
+		var mutexResult sync.Mutex
 
-			if !visited[node.NodeDetails.Id] {
-				result = append(result, node)
+		for i := 0; i < alpha; i++ {
+			wg.Add(1)
+			go processNode(request.TargetNodeId, magicCookie, result, &mutexResult, &wg, nodeChan)
+		}
 
-				client, conn, errClient := createClient(node.NodeDetails.Ip)
-				if errClient != nil {
-					return nil, errClient
-				}
+		for _, node := range gatheredNodes {
+			nodeChan <- node
+		}
 
-				lookup, errLookup := clientPerformLookup(request.TargetNodeId, magicCookie, client)
-				errConn := conn.Close()
-				if errConn != nil {
-					return nil, errConn
-				}
-
-				if errLookup != nil {
-					return nil, errLookup
-				}
-
-				log.Printf("Node %s returned the following nodes: %v", node.NodeDetails.Id, lookup)
-				nodesQueue = append(nodesQueue, lookup...)
-				visited[node.NodeDetails.Id] = true
-			}
-
-			nodesQueue = nodesQueue[1:]
+		if WaitTimeout(&wg, 100*time.Millisecond) {
+			fmt.Println("All workers finished within the timeout.")
+		} else {
+			fmt.Println("Timeout reached before all workers could finish.")
 		}
 	}
 
 	if request.Requester != nil {
-		updateRoutingTable(bucket, request.Requester)
+		requesterBucket, errDist := calculateDistance(request.TargetNodeId, id)
+		if errDist != nil {
+			log.Printf("Could not calculate distance to requester.")
+		} else {
+			updateRoutingTable(requesterBucket, request.Requester)
+		}
 	}
 
 	log.Println("Lookup finished!")
 
 	if len(result) != 0 {
-		sort.Slice(result, func(i, j int) bool {
-			return result[i].DistanceToTarget < result[j].DistanceToTarget
+		//this implementation is shit
+		resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
+		for _, node := range result {
+			resultedNodes = append(resultedNodes, node)
+		}
+		sort.Slice(resultedNodes, func(i, j int) bool {
+			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
 		})
-		return &ks.LookupResponse{Nodes: result[:k]}, nil
+		log.Println("Returned result")
+		return &ks.LookupResponse{Nodes: resultedNodes[:k]}, nil
 	}
 
-	return &ks.LookupResponse{Nodes: nodesQueue[:k]}, nil
+	log.Println("Returned gathered nodes")
+	return &ks.LookupResponse{Nodes: gatheredNodes}, nil
 }
 
 func (s *server) FIND_VALUE(_ context.Context, keyRequest *ks.Key) (*ks.Value, error) {
