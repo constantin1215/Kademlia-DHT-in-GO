@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"google.golang.org/grpc"
 	"log"
@@ -10,14 +11,12 @@ import (
 	ks "peer/kademlia/service"
 	"sort"
 	"strconv"
-	"sync"
-	"time"
 )
 
 var (
 	id           = calculateNodeId()
 	routingTable = initRoutingTable()
-	data         = make(map[int32]int32)
+	data         = make(map[string]int32)
 )
 
 const (
@@ -30,115 +29,102 @@ type server struct {
 }
 
 func (s *server) PING(_ context.Context, _ *ks.PingCheck) (*ks.NodeInfo, error) {
-	return &ks.NodeInfo{Ip: ip, Port: int32(port), Id: id}, nil
+	return &ks.NodeInfo{Ip: ip, Port: port, Id: id}, nil
 }
 
-func (s *server) STORE(_ context.Context, req *ks.StoreRequest) (*ks.StoreResult, error) {
-	data[req.Key] = req.Value
-	return &ks.StoreResult{Result: true, Message: "Data stored successfully!"}, nil
-}
+func (s *server) STORE(_ context.Context, request *ks.StoreRequest) (*ks.StoreResponse, error) {
+	log.Printf("STORE: Request received: %v", request)
 
-func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
-	ch := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(ch)
-	}()
-	select {
-	case <-ch:
-		return true
-	case <-time.After(timeout):
-		return false
-	}
-}
-
-func processNode(targetId string, magicCookie uint64, result map[string]*ks.NodeInfoLookup, mutexResult *sync.Mutex,
-	waitGroup *sync.WaitGroup, nodeChan chan *ks.NodeInfoLookup) {
-	defer waitGroup.Done()
-
-	for node := range nodeChan {
-		log.Printf("Processing %v", node)
-
-		mutexResult.Lock()
-		result[node.NodeDetails.Id] = node
-		mutexResult.Unlock()
-
-		client, conn, errClient := createClient(node.NodeDetails.Ip)
-		if errClient != nil {
-			continue
+	if request.MagicCookie == nil {
+		gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Key)
+		if errClosestNodes != nil {
+			log.Println("ERROR: Could not find closest nodes.")
+			return &ks.StoreResponse{}, nil
 		}
 
-		lookup, errLookup := clientPerformLookup(targetId, magicCookie, client)
-		errConn := conn.Close()
-		if errConn != nil {
-			continue
-		}
+		result := make(map[string]*ks.NodeInfoLookup)
+		magicCookie := rand.Uint64()
 
-		if errLookup != nil {
-			continue
+		for _, node := range gatheredNodes {
+			result[node.NodeDetails.Id] = node
 		}
+		findNodePool(request.Key, magicCookie, result, gatheredNodes)
 
-		log.Printf("Node %s returned the following nodes: %v", node.NodeDetails.Ip, lookup)
-		for _, infoLookup := range lookup {
-			mutexResult.Lock()
-			_, ok := result[infoLookup.NodeDetails.Id]
-			mutexResult.Unlock()
-			if !ok {
-				go func() {
-					nodeChan <- infoLookup
-					log.Printf("(Added to chan) Node %s sent the following info: %v", node.NodeDetails.Ip, infoLookup)
-				}()
+		resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
+		for _, node := range result {
+			resultedNodes = append(resultedNodes, node)
+		}
+		sort.Slice(resultedNodes, func(i, j int) bool {
+			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
+		})
+
+		successes := 0
+		dataNodes := make([]*ks.NodeInfoLookup, 0, k)
+		for _, node := range resultedNodes {
+			client, conn, err := createClient(node.NodeDetails.Ip)
+			if err != nil {
+				return nil, err
+			}
+
+			_, errStore := clientPerformStore(request.Key, request.Value, magicCookie, client)
+			if errStore != nil {
+				continue
+			}
+
+			errConn := conn.Close()
+			if errConn != nil {
+				continue
+			}
+
+			successes++
+			dataNodes = append(dataNodes, node)
+			if successes == k {
+				break
 			}
 		}
+
+		if len(dataNodes) == 0 {
+			return nil, errors.New("Could not store in any node")
+		}
+
+		return &ks.StoreResponse{DataNodes: dataNodes}, nil
+	} else {
+		data[request.Key] = request.Value
 	}
+
+	if request.Requester != nil {
+		requesterBucket, errDist := calculateDistance(request.Key, id)
+		if errDist != nil {
+			log.Printf("Could not calculate distance to requester.")
+		} else {
+			updateRoutingTable(requesterBucket, request.Requester)
+		}
+	}
+
+	return &ks.StoreResponse{}, nil
 }
 
 func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.LookupResponse, error) {
 	log.Printf("FIND_NODE: Request received: %v", request)
 
-	bucket, err := calculateDistance(request.TargetNodeId, id)
-	if err != nil {
-		fmt.Println("Error calculating distance, invalid character detected in node ID.")
-		return nil, err
+	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Target)
+	if errClosestNodes != nil {
+		log.Println("ERROR: Could not find closest nodes.")
+		return &ks.LookupResponse{}, nil
 	}
 
-	var gatheredNodes []*ks.NodeInfoLookup
 	result := make(map[string]*ks.NodeInfoLookup)
-
-	if request.Requester != nil {
-		gatheredNodes = gatherClosestNodes(bucket, request.Requester.Id, request.TargetNodeId)
-	} else {
-		gatheredNodes = gatherClosestNodes(bucket, "", request.TargetNodeId)
-	}
-	log.Printf("Gathered nodes %v", gatheredNodes)
 
 	if request.MagicCookie == nil {
 		magicCookie := rand.Uint64()
 		for _, node := range gatheredNodes {
 			result[node.NodeDetails.Id] = node
 		}
-		nodeChan := make(chan *ks.NodeInfoLookup, 10)
-		var wg sync.WaitGroup
-		var mutexResult sync.Mutex
-
-		for i := 0; i < alpha; i++ {
-			wg.Add(1)
-			go processNode(request.TargetNodeId, magicCookie, result, &mutexResult, &wg, nodeChan)
-		}
-
-		for _, node := range gatheredNodes {
-			nodeChan <- node
-		}
-
-		if WaitTimeout(&wg, 100*time.Millisecond) {
-			fmt.Println("All workers finished within the timeout.")
-		} else {
-			fmt.Println("Timeout reached before all workers could finish.")
-		}
+		findNodePool(request.Target, magicCookie, result, gatheredNodes)
 	}
 
 	if request.Requester != nil {
-		requesterBucket, errDist := calculateDistance(request.TargetNodeId, id)
+		requesterBucket, errDist := calculateDistance(request.Target, id)
 		if errDist != nil {
 			log.Printf("Could not calculate distance to requester.")
 		} else {
@@ -165,8 +151,44 @@ func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.Lo
 	return &ks.LookupResponse{Nodes: gatheredNodes}, nil
 }
 
-func (s *server) FIND_VALUE(_ context.Context, keyRequest *ks.Key) (*ks.Value, error) {
-	return &ks.Value{Value: data[keyRequest.Key]}, nil
+func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.ValueResponse, error) {
+	log.Printf("FIND_VALUE: Request received: %v", request)
+	value, ok := data[request.Target]
+	if ok {
+		return &ks.ValueResponse{Value: &value}, nil
+	}
+
+	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Target)
+	if errClosestNodes != nil {
+		log.Println("ERROR: Could not find closest nodes.")
+		return &ks.ValueResponse{}, nil
+	}
+
+	result := make(map[string]*ks.NodeInfoLookup)
+
+	var foundValue *int32
+	if request.MagicCookie == nil {
+		magicCookie := rand.Uint64()
+		for _, node := range gatheredNodes {
+			result[node.NodeDetails.Id] = node
+		}
+		findValuePool(request, magicCookie, result, &foundValue, gatheredNodes)
+	}
+
+	if request.Requester != nil {
+		requesterBucket, errDist := calculateDistance(request.Target, id)
+		if errDist != nil {
+			log.Printf("Could not calculate distance to requester.")
+		} else {
+			updateRoutingTable(requesterBucket, request.Requester)
+		}
+	}
+
+	if foundValue != nil {
+		return &ks.ValueResponse{Value: foundValue}, nil
+	}
+
+	return &ks.ValueResponse{Nodes: gatheredNodes}, nil
 }
 
 func startService() {
@@ -177,7 +199,7 @@ func startService() {
 
 	s := grpc.NewServer()
 	ks.RegisterKademliaServiceServer(s, &server{})
-	log.Printf("server listening at %s", ip+":"+strconv.Itoa(port))
+	log.Printf("server listening at %s", ip+":"+strconv.Itoa(int(port)))
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

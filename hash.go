@@ -9,7 +9,7 @@ import (
 )
 
 func calculateNodeId() string {
-	data := ip + strconv.Itoa(port)
+	data := ip + strconv.Itoa(int(port))
 	sha := sha256.New()
 	sha.Write([]byte(data))
 	encrypted := sha.Sum(nil)

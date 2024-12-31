@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	port = 7777
+	port = int32(7777)
 	ip   = getIP()
 )
 
@@ -73,7 +73,7 @@ func joinNetwork() {
 					continue
 				}
 				magicCookie := rand.Uint64()
-				nodes, errLookup := clientPerformLookup(id, magicCookie, client)
+				nodes, errLookup := clientPerformLookupNode(id, magicCookie, client)
 				closeErr := conn.Close()
 				if closeErr != nil {
 					return
@@ -91,9 +91,9 @@ func joinNetwork() {
 					if newNodeClientErr != nil {
 						continue
 					}
-					newNodeLookupResult, newNodeLookupErr := clientPerformLookup(id, magicCookie, newNodeClient)
+					newNodeLookupResult, newNodeLookupErr := clientPerformLookupNode(id, magicCookie, newNodeClient)
 					if newNodeLookupErr != nil {
-						return
+						continue
 					}
 					neighboursResults = append(neighboursResults, newNodeLookupResult...)
 					closeNewNodeConnErr := newNodeConn.Close()

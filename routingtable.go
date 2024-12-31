@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	ks "peer/kademlia/service"
 )
@@ -12,7 +13,9 @@ var (
 func initRoutingTable() map[uint16][]*ks.NodeInfo {
 	initial := make(map[uint16][]*ks.NodeInfo, 65)
 
-	for i := uint16(0); i <= 256; i++ {
+	initial[0] = make([]*ks.NodeInfo, 0, 1)
+	initial[0] = append(initial[0], &ks.NodeInfo{Ip: ip, Id: id, Port: port})
+	for i := uint16(1); i <= 256; i++ {
 		initial[i] = make([]*ks.NodeInfo, 0, k)
 	}
 
@@ -105,4 +108,22 @@ func gatherClosestNodes(bucket uint16, requesterId string, targetId string) []*k
 	}
 
 	return nodes
+}
+
+func findClosestNodes(requester *ks.NodeInfo, target string) ([]*ks.NodeInfoLookup, error) {
+	bucket, err := calculateDistance(target, id)
+	if err != nil {
+		fmt.Println("Error calculating distance, invalid character detected in node ID.")
+		return nil, err
+	}
+
+	var gatheredNodes []*ks.NodeInfoLookup
+
+	if requester != nil {
+		gatheredNodes = gatherClosestNodes(bucket, requester.Id, target)
+	} else {
+		gatheredNodes = gatherClosestNodes(bucket, "", target)
+	}
+	log.Printf("Gathered nodes %v", gatheredNodes)
+	return gatheredNodes, nil
 }

@@ -44,16 +44,44 @@ func clientPerformPING(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
 	return pingResult, nil
 }
 
-func clientPerformLookup(targetNodeId string, magicCookie uint64, client ks.KademliaServiceClient) ([]*ks.NodeInfoLookup, error) {
-	log.Println("Performing LOOKUP")
+func clientPerformLookupNode(targetNodeId string, magicCookie uint64, client ks.KademliaServiceClient) ([]*ks.NodeInfoLookup, error) {
+	log.Println("Performing NODE LOOKUP")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	response, err := client.FIND_NODE(ctx, &ks.LookupRequest{TargetNodeId: targetNodeId, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: int32(port)}, MagicCookie: &magicCookie})
+	response, err := client.FIND_NODE(ctx, &ks.LookupRequest{Target: targetNodeId, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: port}, MagicCookie: &magicCookie})
 	if err != nil {
 		return nil, err
 	}
 
 	return response.Nodes, nil
+}
+
+func clientPerformLookupValue(targetKey string, magicCookie uint64, client ks.KademliaServiceClient) (*ks.ValueResponse, error) {
+	log.Println("Performing VALUE LOOKUP")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	response, err := client.FIND_VALUE(ctx, &ks.LookupRequest{Target: targetKey, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: port}, MagicCookie: &magicCookie})
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func clientPerformStore(key string, value int32, magicCookie uint64, client ks.KademliaServiceClient) (*ks.StoreResponse, error) {
+	log.Println("Performing STORE")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	response, err := client.STORE(ctx, &ks.StoreRequest{Key: key, Value: value, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: port}, MagicCookie: &magicCookie})
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
 }

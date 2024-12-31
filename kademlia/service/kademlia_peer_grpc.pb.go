@@ -30,9 +30,9 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type KademliaServiceClient interface {
 	PING(ctx context.Context, in *PingCheck, opts ...grpc.CallOption) (*NodeInfo, error)
-	STORE(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResult, error)
+	STORE(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResponse, error)
 	FIND_NODE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*LookupResponse, error)
-	FIND_VALUE(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Value, error)
+	FIND_VALUE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*ValueResponse, error)
 }
 
 type kademliaServiceClient struct {
@@ -53,9 +53,9 @@ func (c *kademliaServiceClient) PING(ctx context.Context, in *PingCheck, opts ..
 	return out, nil
 }
 
-func (c *kademliaServiceClient) STORE(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResult, error) {
+func (c *kademliaServiceClient) STORE(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(StoreResult)
+	out := new(StoreResponse)
 	err := c.cc.Invoke(ctx, KademliaService_STORE_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -73,9 +73,9 @@ func (c *kademliaServiceClient) FIND_NODE(ctx context.Context, in *LookupRequest
 	return out, nil
 }
 
-func (c *kademliaServiceClient) FIND_VALUE(ctx context.Context, in *Key, opts ...grpc.CallOption) (*Value, error) {
+func (c *kademliaServiceClient) FIND_VALUE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*ValueResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Value)
+	out := new(ValueResponse)
 	err := c.cc.Invoke(ctx, KademliaService_FIND_VALUE_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
@@ -88,9 +88,9 @@ func (c *kademliaServiceClient) FIND_VALUE(ctx context.Context, in *Key, opts ..
 // for forward compatibility.
 type KademliaServiceServer interface {
 	PING(context.Context, *PingCheck) (*NodeInfo, error)
-	STORE(context.Context, *StoreRequest) (*StoreResult, error)
+	STORE(context.Context, *StoreRequest) (*StoreResponse, error)
 	FIND_NODE(context.Context, *LookupRequest) (*LookupResponse, error)
-	FIND_VALUE(context.Context, *Key) (*Value, error)
+	FIND_VALUE(context.Context, *LookupRequest) (*ValueResponse, error)
 	mustEmbedUnimplementedKademliaServiceServer()
 }
 
@@ -104,13 +104,13 @@ type UnimplementedKademliaServiceServer struct{}
 func (UnimplementedKademliaServiceServer) PING(context.Context, *PingCheck) (*NodeInfo, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PING not implemented")
 }
-func (UnimplementedKademliaServiceServer) STORE(context.Context, *StoreRequest) (*StoreResult, error) {
+func (UnimplementedKademliaServiceServer) STORE(context.Context, *StoreRequest) (*StoreResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method STORE not implemented")
 }
 func (UnimplementedKademliaServiceServer) FIND_NODE(context.Context, *LookupRequest) (*LookupResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FIND_NODE not implemented")
 }
-func (UnimplementedKademliaServiceServer) FIND_VALUE(context.Context, *Key) (*Value, error) {
+func (UnimplementedKademliaServiceServer) FIND_VALUE(context.Context, *LookupRequest) (*ValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FIND_VALUE not implemented")
 }
 func (UnimplementedKademliaServiceServer) mustEmbedUnimplementedKademliaServiceServer() {}
@@ -189,7 +189,7 @@ func _KademliaService_FIND_NODE_Handler(srv interface{}, ctx context.Context, de
 }
 
 func _KademliaService_FIND_VALUE_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Key)
+	in := new(LookupRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func _KademliaService_FIND_VALUE_Handler(srv interface{}, ctx context.Context, d
 		FullMethod: KademliaService_FIND_VALUE_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KademliaServiceServer).FIND_VALUE(ctx, req.(*Key))
+		return srv.(KademliaServiceServer).FIND_VALUE(ctx, req.(*LookupRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
