@@ -11,7 +11,7 @@ var (
 )
 
 func initRoutingTable() map[uint16][]*ks.NodeInfo {
-	initial := make(map[uint16][]*ks.NodeInfo, 65)
+	initial := make(map[uint16][]*ks.NodeInfo, 256)
 
 	initial[0] = make([]*ks.NodeInfo, 0, 1)
 	initial[0] = append(initial[0], &ks.NodeInfo{Ip: ip, Id: id, Port: port})

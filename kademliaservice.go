@@ -188,6 +188,19 @@ func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.V
 		return &ks.ValueResponse{Value: foundValue}, nil
 	}
 
+	if len(result) != 0 {
+		//this implementation is shit
+		resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
+		for _, node := range result {
+			resultedNodes = append(resultedNodes, node)
+		}
+		sort.Slice(resultedNodes, func(i, j int) bool {
+			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
+		})
+		log.Println("Returned result")
+		return &ks.ValueResponse{Nodes: resultedNodes[:k]}, nil
+	}
+
 	return &ks.ValueResponse{Nodes: gatheredNodes}, nil
 }
 

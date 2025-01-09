@@ -57,7 +57,6 @@ func processFindNode(targetId string, magicCookie uint64, result map[string]*ks.
 			if !ok {
 				go func() {
 					nodeChan <- infoLookup
-					log.Printf("(Added to chan) Node %s sent the following info: %v", node.NodeDetails.Ip, infoLookup)
 				}()
 			}
 		}
