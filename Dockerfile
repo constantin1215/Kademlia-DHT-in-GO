@@ -1,4 +1,4 @@
-FROM golang:1.23.4-alpine AS builder
+FROM golang:1.25-alpine AS builder
 LABEL authors="costi"
 
 ENV CGO_ENABLED=0 GOOS=linux GOARCH=amd64

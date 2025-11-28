@@ -4,32 +4,24 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"google.golang.org/grpc"
 	"log"
 	"math/rand/v2"
 	"net"
 	ks "peer/kademlia/service"
 	"sort"
 	"strconv"
+
+	"google.golang.org/grpc"
 )
 
-var (
-	id           = calculateNodeId()
-	routingTable = initRoutingTable()
-	data         = make(map[string]int32)
-)
-
-const (
-	k     = 4
-	alpha = 3
-)
+var data = make(map[string]int32)
 
 type server struct {
 	ks.UnimplementedKademliaServiceServer
 }
 
 func (s *server) PING(_ context.Context, _ *ks.PingCheck) (*ks.NodeInfo, error) {
-	return &ks.NodeInfo{Ip: ip, Port: port, Id: id}, nil
+	return &ks.NodeInfo{Ip: config.ip, Port: config.port, Id: config.id}, nil
 }
 
 func (s *server) STORE(_ context.Context, request *ks.StoreRequest) (*ks.StoreResponse, error) {
@@ -59,14 +51,14 @@ func (s *server) STORE(_ context.Context, request *ks.StoreRequest) (*ks.StoreRe
 		})
 
 		successes := 0
-		dataNodes := make([]*ks.NodeInfoLookup, 0, k)
+		dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
 		for _, node := range resultedNodes {
 			client, conn, err := createClient(node.NodeDetails.Ip)
 			if err != nil {
 				return nil, err
 			}
 
-			_, errStore := clientPerformStore(request.Key, request.Value, magicCookie, client)
+			_, errStore := Store(request.Key, request.Value, magicCookie, client)
 			if errStore != nil {
 				continue
 			}
@@ -78,7 +70,7 @@ func (s *server) STORE(_ context.Context, request *ks.StoreRequest) (*ks.StoreRe
 
 			successes++
 			dataNodes = append(dataNodes, node)
-			if successes == k {
+			if successes == config.k {
 				break
 			}
 		}
@@ -93,11 +85,11 @@ func (s *server) STORE(_ context.Context, request *ks.StoreRequest) (*ks.StoreRe
 	}
 
 	if request.Requester != nil {
-		requesterBucket, errDist := calculateDistance(request.Key, id)
+		requesterBucket, errDist := calculateDistance(request.Key, config.id)
 		if errDist != nil {
 			log.Printf("Could not calculate distance to requester.")
 		} else {
-			updateRoutingTable(requesterBucket, request.Requester)
+			updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
 		}
 	}
 
@@ -124,11 +116,11 @@ func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.Lo
 	}
 
 	if request.Requester != nil {
-		requesterBucket, errDist := calculateDistance(request.Target, id)
+		requesterBucket, errDist := calculateDistance(request.Target, config.id)
 		if errDist != nil {
 			log.Printf("Could not calculate distance to requester.")
 		} else {
-			updateRoutingTable(requesterBucket, request.Requester)
+			updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
 		}
 	}
 
@@ -144,7 +136,7 @@ func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.Lo
 			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
 		})
 		log.Println("Returned result")
-		return &ks.LookupResponse{Nodes: resultedNodes[:k]}, nil
+		return &ks.LookupResponse{Nodes: resultedNodes[:config.k]}, nil
 	}
 
 	log.Println("Returned gathered nodes")
@@ -176,11 +168,11 @@ func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.V
 	}
 
 	if request.Requester != nil {
-		requesterBucket, errDist := calculateDistance(request.Target, id)
+		requesterBucket, errDist := calculateDistance(request.Target, config.id)
 		if errDist != nil {
 			log.Printf("Could not calculate distance to requester.")
 		} else {
-			updateRoutingTable(requesterBucket, request.Requester)
+			updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
 		}
 	}
 
@@ -198,21 +190,21 @@ func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.V
 			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
 		})
 		log.Println("Returned result")
-		return &ks.ValueResponse{Nodes: resultedNodes[:k]}, nil
+		return &ks.ValueResponse{Nodes: resultedNodes[:config.k]}, nil
 	}
 
 	return &ks.ValueResponse{Nodes: gatheredNodes}, nil
 }
 
 func startService() {
-	lis, err := net.Listen("tcp4", fmt.Sprintf(":%d", port))
+	lis, err := net.Listen("tcp4", fmt.Sprintf(":%d", config.port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
 	s := grpc.NewServer()
 	ks.RegisterKademliaServiceServer(s, &server{})
-	log.Printf("server listening at %s", ip+":"+strconv.Itoa(int(port)))
+	log.Printf("server listening at %s", config.ip+":"+strconv.Itoa(int(config.port)))
 
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)

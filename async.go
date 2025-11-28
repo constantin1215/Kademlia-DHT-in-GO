@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+const alpha = 3
+
 func WaitTimeout(wg *sync.WaitGroup, timeout time.Duration) bool {
 	ch := make(chan struct{})
 	go func() {
@@ -39,13 +41,13 @@ func processFindNode(targetId string, magicCookie uint64, result map[string]*ks.
 			continue
 		}
 
-		lookup, errLookup := clientPerformLookupNode(targetId, magicCookie, client)
-		errConn := conn.Close()
-		if errConn != nil {
+		lookup, errLookup := LookupNode(targetId, magicCookie, client)
+		if errLookup != nil {
 			continue
 		}
 
-		if errLookup != nil {
+		errConn := conn.Close()
+		if errConn != nil {
 			continue
 		}
 
@@ -100,7 +102,7 @@ func processFindValue(targetKey string, magicCookie uint64, resultedNodes map[st
 			continue
 		}
 
-		lookup, errLookup := clientPerformLookupValue(targetKey, magicCookie, client)
+		lookup, errLookup := LookupValue(targetKey, magicCookie, client)
 		errConn := conn.Close()
 		if errConn != nil {
 			continue

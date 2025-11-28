@@ -2,11 +2,12 @@ package main
 
 import (
 	"context"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"log"
 	ks "peer/kademlia/service"
 	"time"
+
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func createClient(peerIp string) (ks.KademliaServiceClient, *grpc.ClientConn, error) {
@@ -27,7 +28,7 @@ func createClient(peerIp string) (ks.KademliaServiceClient, *grpc.ClientConn, er
 	return client, conn, nil
 }
 
-func clientPerformPING(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
+func Ping(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
 	log.Println("Performing PING")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
@@ -44,13 +45,13 @@ func clientPerformPING(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
 	return pingResult, nil
 }
 
-func clientPerformLookupNode(targetNodeId string, magicCookie uint64, client ks.KademliaServiceClient) ([]*ks.NodeInfoLookup, error) {
+func LookupNode(targetNodeId string, magicCookie uint64, client ks.KademliaServiceClient) ([]*ks.NodeInfoLookup, error) {
 	log.Println("Performing NODE LOOKUP")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	response, err := client.FIND_NODE(ctx, &ks.LookupRequest{Target: targetNodeId, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: port}, MagicCookie: &magicCookie})
+	response, err := client.FIND_NODE(ctx, &ks.LookupRequest{Target: targetNodeId, Requester: &ks.NodeInfo{Ip: config.ip, Id: config.id, Port: config.port}, MagicCookie: &magicCookie})
 	if err != nil {
 		return nil, err
 	}
@@ -58,13 +59,13 @@ func clientPerformLookupNode(targetNodeId string, magicCookie uint64, client ks.
 	return response.Nodes, nil
 }
 
-func clientPerformLookupValue(targetKey string, magicCookie uint64, client ks.KademliaServiceClient) (*ks.ValueResponse, error) {
+func LookupValue(targetKey string, magicCookie uint64, client ks.KademliaServiceClient) (*ks.ValueResponse, error) {
 	log.Println("Performing VALUE LOOKUP")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	response, err := client.FIND_VALUE(ctx, &ks.LookupRequest{Target: targetKey, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: port}, MagicCookie: &magicCookie})
+	response, err := client.FIND_VALUE(ctx, &ks.LookupRequest{Target: targetKey, Requester: &ks.NodeInfo{Ip: config.ip, Id: config.id, Port: config.port}, MagicCookie: &magicCookie})
 	if err != nil {
 		return nil, err
 	}
@@ -72,13 +73,13 @@ func clientPerformLookupValue(targetKey string, magicCookie uint64, client ks.Ka
 	return response, nil
 }
 
-func clientPerformStore(key string, value int32, magicCookie uint64, client ks.KademliaServiceClient) (*ks.StoreResponse, error) {
+func Store(key string, value int32, magicCookie uint64, client ks.KademliaServiceClient) (*ks.StoreResponse, error) {
 	log.Println("Performing STORE")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	response, err := client.STORE(ctx, &ks.StoreRequest{Key: key, Value: value, Requester: &ks.NodeInfo{Ip: ip, Id: id, Port: port}, MagicCookie: &magicCookie})
+	response, err := client.STORE(ctx, &ks.StoreRequest{Key: key, Value: value, Requester: &ks.NodeInfo{Ip: config.ip, Id: config.id, Port: config.port}, MagicCookie: &magicCookie})
 	if err != nil {
 		return nil, err
 	}
