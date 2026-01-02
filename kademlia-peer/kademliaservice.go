@@ -2,11 +2,14 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"math/rand/v2"
 	"net"
+	"os"
+	"path/filepath"
 	ks "peer/kademlia/service"
 	"sort"
 	"strconv"
@@ -15,6 +18,23 @@ import (
 )
 
 var data = make(map[string]int32)
+
+func loadData() {
+	file, err := os.ReadFile("/etc/data/" + os.Getenv("TAG") + "_peer_data.json")
+	if err != nil {
+		log.Println("Error reading /etc/data/" + os.Getenv("TAG") + "_peer_data.json")
+		return
+	}
+
+	err = json.Unmarshal(file, &data)
+	if err != nil {
+		log.Println("Error parsing /etc/data/" + os.Getenv("TAG") + "_peer_data.json")
+	}
+
+	hostname, _ := os.Hostname()
+	log.Println(hostname)
+	log.Println("Data loaded from /etc/data/" + os.Getenv("TAG") + "_peer_data.json")
+}
 
 type server struct {
 	ks.UnimplementedKademliaServiceServer
@@ -27,73 +47,81 @@ func (s *server) PING(_ context.Context, _ *ks.PingCheck) (*ks.NodeInfo, error) 
 func (s *server) STORE(_ context.Context, request *ks.StoreRequest) (*ks.StoreResponse, error) {
 	log.Printf("STORE: Request received: %v", request)
 
-	if request.MagicCookie == nil {
-		gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Key)
-		if errClosestNodes != nil {
-			log.Println("ERROR: Could not find closest nodes.")
-			return &ks.StoreResponse{}, nil
-		}
-
-		result := make(map[string]*ks.NodeInfoLookup)
-		magicCookie := rand.Uint64()
-
-		for _, node := range gatheredNodes {
-			result[node.NodeDetails.Id] = node
-		}
-		findNodePool(request.Key, magicCookie, result, gatheredNodes)
-
-		resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
-		for _, node := range result {
-			resultedNodes = append(resultedNodes, node)
-		}
-		sort.Slice(resultedNodes, func(i, j int) bool {
-			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
-		})
-
-		successes := 0
-		dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
-		for _, node := range resultedNodes {
-			client, conn, err := createClient(node.NodeDetails.Ip)
-			if err != nil {
-				return nil, err
-			}
-
-			_, errStore := Store(request.Key, request.Value, magicCookie, client)
-			if errStore != nil {
-				continue
-			}
-
-			errConn := conn.Close()
-			if errConn != nil {
-				continue
-			}
-
-			successes++
-			dataNodes = append(dataNodes, node)
-			if successes == config.k {
-				break
-			}
-		}
-
-		if len(dataNodes) == 0 {
-			return nil, errors.New("Could not store in any node")
-		}
-
-		return &ks.StoreResponse{DataNodes: dataNodes}, nil
-	} else {
+	if request.MagicCookie != nil {
 		data[request.Key] = request.Value
+
+		if request.Requester != nil {
+			requesterBucket, errDist := calculateDistance(request.Key, config.id)
+			if errDist != nil {
+				log.Printf("Could not calculate distance to requester.")
+			} else {
+				updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
+			}
+		}
+
+		filePath := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data.json")
+		dataJsonString, err := json.Marshal(data)
+		if err != nil {
+			log.Println("Error marshalling data")
+		} else {
+			os.WriteFile(filePath, dataJsonString, 0644)
+		}
+
+		return &ks.StoreResponse{}, nil
 	}
 
-	if request.Requester != nil {
-		requesterBucket, errDist := calculateDistance(request.Key, config.id)
-		if errDist != nil {
-			log.Printf("Could not calculate distance to requester.")
-		} else {
-			updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
+	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Key)
+	if errClosestNodes != nil {
+		log.Println("ERROR: Could not find closest nodes.")
+		return &ks.StoreResponse{}, nil
+	}
+
+	result := make(map[string]*ks.NodeInfoLookup)
+	magicCookie := rand.Uint64()
+
+	for _, node := range gatheredNodes {
+		result[node.NodeDetails.Id] = node
+	}
+	findNodePool(request.Key, magicCookie, result, gatheredNodes)
+
+	resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
+	for _, node := range result {
+		resultedNodes = append(resultedNodes, node)
+	}
+	sort.Slice(resultedNodes, func(i, j int) bool {
+		return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
+	})
+
+	successes := 0
+	dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
+	for _, node := range resultedNodes {
+		client, conn, err := createClient(node.NodeDetails.Ip)
+		if err != nil {
+			return nil, err
+		}
+
+		_, errStore := Store(request.Key, request.Value, magicCookie, client)
+		if errStore != nil {
+			continue
+		}
+
+		errConn := conn.Close()
+		if errConn != nil {
+			continue
+		}
+
+		successes++
+		dataNodes = append(dataNodes, node)
+		if successes == config.k {
+			break
 		}
 	}
 
-	return &ks.StoreResponse{}, nil
+	if len(dataNodes) == 0 {
+		return nil, errors.New("Could not store in any node")
+	}
+
+	return &ks.StoreResponse{DataNodes: dataNodes}, nil
 }
 
 func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.LookupResponse, error) {
@@ -194,6 +222,30 @@ func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.V
 	}
 
 	return &ks.ValueResponse{Nodes: gatheredNodes}, nil
+}
+
+func (s *server) ROUTING_TABLE_DUMP(_ context.Context, _ *ks.RoutingTableDumpRequest) (*ks.RoutingTableDumpResponse, error) {
+	convertedRoutingTable := make(map[uint32]*ks.NodeInfoList)
+
+	for key, value := range config.routingTable {
+		nodeList := &ks.NodeInfoList{Nodes: value}
+		convertedRoutingTable[uint32(key)] = nodeList
+	}
+
+	return &ks.RoutingTableDumpResponse{
+		Pairs: convertedRoutingTable,
+	}, nil
+}
+
+func (s *server) DATA_DUMP(_ context.Context, _ *ks.DataDumpRequest) (*ks.DataDumpResponse, error) {
+	return &ks.DataDumpResponse{
+		Pairs: data,
+	}, nil
+}
+
+func (s *server) PUT(_ context.Context, request *ks.PutRequest) (*ks.NodeInfo, error) {
+	data[request.Key] = request.Value
+	return &ks.NodeInfo{Ip: config.ip, Port: config.port, Id: config.id}, nil
 }
 
 func startService() {

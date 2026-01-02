@@ -1,0 +1,102 @@
+services:
+  A:
+    image: kademlia-peer:latest
+    ports:
+      - "7777:7777"
+    environment:
+      K: "3"
+      TAG: "A"
+    volumes:
+      - peer-data:/etc/data
+  B:
+    image: kademlia-peer:latest
+    ports:
+      - "7778:7777"
+    environment:
+      K: "3"
+      TAG: "B"
+    volumes:
+      - peer-data:/etc/data
+  C:
+    image: kademlia-peer:latest
+    ports:
+      - "7779:7777"
+    environment:
+      K: "3"
+      TAG: "C"
+    volumes:
+      - peer-data:/etc/data
+  D:
+    image: kademlia-peer:latest
+    ports:
+      - "7780:7777"
+    environment:
+      K: "3"
+      TAG: "D"
+    volumes:
+      - peer-data:/etc/data
+  E:
+    image: kademlia-peer:latest
+    ports:
+      - "7781:7777"
+    environment:
+      K: "3"
+      TAG: "E"
+    volumes:
+      - peer-data:/etc/data
+  F:
+    image: kademlia-peer:latest
+    ports:
+      - "7782:7777"
+    environment:
+      K: "3"
+      TAG: "F"
+    volumes:
+      - peer-data:/etc/data
+  G:
+    image: kademlia-peer:latest
+    ports:
+      - "7783:7777"
+    environment:
+      K: "3"
+      TAG: "G"
+    volumes:
+      - peer-data:/etc/data
+  I:
+    image: kademlia-peer:latest
+    ports:
+      - "7784:7777"
+    environment:
+      K: "3"
+      TAG: "I"
+    volumes:
+      - peer-data:/etc/data
+  J:
+    image: kademlia-peer:latest
+    ports:
+      - "7785:7777"
+    environment:
+      K: "3"
+      TAG: "J"
+    volumes:
+      - peer-data:/etc/data
+  K:
+    image: kademlia-peer:latest
+    ports:
+      - "7786:7777"
+    environment:
+      K: "3"
+      TAG: "K"
+    volumes:
+      - peer-data:/etc/data
+  L:
+    image: kademlia-peer:latest
+    ports:
+      - "7787:7777"
+    environment:
+      K: "3"
+      TAG: "L"
+    volumes:
+      - peer-data:/etc/data
+volumes:
+  peer-data:

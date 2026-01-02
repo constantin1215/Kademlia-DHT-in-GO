@@ -6,6 +6,9 @@ service KademliaService {
         rpc STORE (StoreRequest) returns (StoreResponse) {}
         rpc FIND_NODE (LookupRequest) returns (LookupResponse) {}
         rpc FIND_VALUE (LookupRequest) returns (ValueResponse) {}
+        rpc ROUTING_TABLE_DUMP (RoutingTableDumpRequest) returns (RoutingTableDumpResponse) {}
+        rpc DATA_DUMP (DataDumpRequest) returns (DataDumpResponse) {}
+        rpc PUT (PutRequest) returns (NodeInfo) {}
 }
 
 message NodeInfo {
@@ -46,4 +49,27 @@ message LookupResponse {
 message ValueResponse {
         optional int32 value = 1;
         repeated NodeInfoLookup nodes = 2;
+}
+
+message RoutingTableDumpRequest {
+}
+
+message NodeInfoList {
+  repeated NodeInfo nodes = 1;
+}
+
+message RoutingTableDumpResponse {
+  map<uint32, NodeInfoList> pairs = 1;
+}
+
+message DataDumpRequest {
+}
+
+message DataDumpResponse {
+  map<string, int32> pairs = 1;
+}
+
+message PutRequest {
+  string key = 1;
+  int32 value = 2;
 }

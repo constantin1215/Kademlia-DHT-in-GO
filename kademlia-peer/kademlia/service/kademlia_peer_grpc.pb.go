@@ -19,10 +19,13 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	KademliaService_PING_FullMethodName       = "/KademliaService/PING"
-	KademliaService_STORE_FullMethodName      = "/KademliaService/STORE"
-	KademliaService_FIND_NODE_FullMethodName  = "/KademliaService/FIND_NODE"
-	KademliaService_FIND_VALUE_FullMethodName = "/KademliaService/FIND_VALUE"
+	KademliaService_PING_FullMethodName               = "/KademliaService/PING"
+	KademliaService_STORE_FullMethodName              = "/KademliaService/STORE"
+	KademliaService_FIND_NODE_FullMethodName          = "/KademliaService/FIND_NODE"
+	KademliaService_FIND_VALUE_FullMethodName         = "/KademliaService/FIND_VALUE"
+	KademliaService_ROUTING_TABLE_DUMP_FullMethodName = "/KademliaService/ROUTING_TABLE_DUMP"
+	KademliaService_DATA_DUMP_FullMethodName          = "/KademliaService/DATA_DUMP"
+	KademliaService_PUT_FullMethodName                = "/KademliaService/PUT"
 )
 
 // KademliaServiceClient is the client API for KademliaService service.
@@ -33,6 +36,9 @@ type KademliaServiceClient interface {
 	STORE(ctx context.Context, in *StoreRequest, opts ...grpc.CallOption) (*StoreResponse, error)
 	FIND_NODE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*LookupResponse, error)
 	FIND_VALUE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*ValueResponse, error)
+	ROUTING_TABLE_DUMP(ctx context.Context, in *RoutingTableDumpRequest, opts ...grpc.CallOption) (*RoutingTableDumpResponse, error)
+	DATA_DUMP(ctx context.Context, in *DataDumpRequest, opts ...grpc.CallOption) (*DataDumpResponse, error)
+	PUT(ctx context.Context, in *PutRequest, opts ...grpc.CallOption) (*NodeInfo, error)
 }
 
 type kademliaServiceClient struct {
@@ -83,6 +89,36 @@ func (c *kademliaServiceClient) FIND_VALUE(ctx context.Context, in *LookupReques
 	return out, nil
 }
 
+func (c *kademliaServiceClient) ROUTING_TABLE_DUMP(ctx context.Context, in *RoutingTableDumpRequest, opts ...grpc.CallOption) (*RoutingTableDumpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RoutingTableDumpResponse)
+	err := c.cc.Invoke(ctx, KademliaService_ROUTING_TABLE_DUMP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kademliaServiceClient) DATA_DUMP(ctx context.Context, in *DataDumpRequest, opts ...grpc.CallOption) (*DataDumpResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DataDumpResponse)
+	err := c.cc.Invoke(ctx, KademliaService_DATA_DUMP_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *kademliaServiceClient) PUT(ctx context.Context, in *PutRequest, opts ...grpc.CallOption) (*NodeInfo, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(NodeInfo)
+	err := c.cc.Invoke(ctx, KademliaService_PUT_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // KademliaServiceServer is the server API for KademliaService service.
 // All implementations must embed UnimplementedKademliaServiceServer
 // for forward compatibility.
@@ -91,6 +127,9 @@ type KademliaServiceServer interface {
 	STORE(context.Context, *StoreRequest) (*StoreResponse, error)
 	FIND_NODE(context.Context, *LookupRequest) (*LookupResponse, error)
 	FIND_VALUE(context.Context, *LookupRequest) (*ValueResponse, error)
+	ROUTING_TABLE_DUMP(context.Context, *RoutingTableDumpRequest) (*RoutingTableDumpResponse, error)
+	DATA_DUMP(context.Context, *DataDumpRequest) (*DataDumpResponse, error)
+	PUT(context.Context, *PutRequest) (*NodeInfo, error)
 	mustEmbedUnimplementedKademliaServiceServer()
 }
 
@@ -112,6 +151,15 @@ func (UnimplementedKademliaServiceServer) FIND_NODE(context.Context, *LookupRequ
 }
 func (UnimplementedKademliaServiceServer) FIND_VALUE(context.Context, *LookupRequest) (*ValueResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method FIND_VALUE not implemented")
+}
+func (UnimplementedKademliaServiceServer) ROUTING_TABLE_DUMP(context.Context, *RoutingTableDumpRequest) (*RoutingTableDumpResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ROUTING_TABLE_DUMP not implemented")
+}
+func (UnimplementedKademliaServiceServer) DATA_DUMP(context.Context, *DataDumpRequest) (*DataDumpResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method DATA_DUMP not implemented")
+}
+func (UnimplementedKademliaServiceServer) PUT(context.Context, *PutRequest) (*NodeInfo, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PUT not implemented")
 }
 func (UnimplementedKademliaServiceServer) mustEmbedUnimplementedKademliaServiceServer() {}
 func (UnimplementedKademliaServiceServer) testEmbeddedByValue()                         {}
@@ -206,6 +254,60 @@ func _KademliaService_FIND_VALUE_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _KademliaService_ROUTING_TABLE_DUMP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RoutingTableDumpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KademliaServiceServer).ROUTING_TABLE_DUMP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KademliaService_ROUTING_TABLE_DUMP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KademliaServiceServer).ROUTING_TABLE_DUMP(ctx, req.(*RoutingTableDumpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KademliaService_DATA_DUMP_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DataDumpRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KademliaServiceServer).DATA_DUMP(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KademliaService_DATA_DUMP_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KademliaServiceServer).DATA_DUMP(ctx, req.(*DataDumpRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _KademliaService_PUT_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PutRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(KademliaServiceServer).PUT(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: KademliaService_PUT_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(KademliaServiceServer).PUT(ctx, req.(*PutRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // KademliaService_ServiceDesc is the grpc.ServiceDesc for KademliaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -228,6 +330,18 @@ var KademliaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "FIND_VALUE",
 			Handler:    _KademliaService_FIND_VALUE_Handler,
+		},
+		{
+			MethodName: "ROUTING_TABLE_DUMP",
+			Handler:    _KademliaService_ROUTING_TABLE_DUMP_Handler,
+		},
+		{
+			MethodName: "DATA_DUMP",
+			Handler:    _KademliaService_DATA_DUMP_Handler,
+		},
+		{
+			MethodName: "PUT",
+			Handler:    _KademliaService_PUT_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
