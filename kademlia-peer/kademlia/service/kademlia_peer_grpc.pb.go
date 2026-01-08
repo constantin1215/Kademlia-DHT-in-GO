@@ -25,7 +25,6 @@ const (
 	KademliaService_FIND_VALUE_FullMethodName         = "/KademliaService/FIND_VALUE"
 	KademliaService_ROUTING_TABLE_DUMP_FullMethodName = "/KademliaService/ROUTING_TABLE_DUMP"
 	KademliaService_DATA_DUMP_FullMethodName          = "/KademliaService/DATA_DUMP"
-	KademliaService_HEAL_REPLICAS_FullMethodName      = "/KademliaService/HEAL_REPLICAS"
 )
 
 // KademliaServiceClient is the client API for KademliaService service.
@@ -38,7 +37,6 @@ type KademliaServiceClient interface {
 	FIND_VALUE(ctx context.Context, in *LookupRequest, opts ...grpc.CallOption) (*ValueResponse, error)
 	ROUTING_TABLE_DUMP(ctx context.Context, in *RoutingTableDumpRequest, opts ...grpc.CallOption) (*RoutingTableDumpResponse, error)
 	DATA_DUMP(ctx context.Context, in *DataDumpRequest, opts ...grpc.CallOption) (*DataDumpResponse, error)
-	HEAL_REPLICAS(ctx context.Context, in *HealReplicasRequest, opts ...grpc.CallOption) (*HealReplicasResponse, error)
 }
 
 type kademliaServiceClient struct {
@@ -109,16 +107,6 @@ func (c *kademliaServiceClient) DATA_DUMP(ctx context.Context, in *DataDumpReque
 	return out, nil
 }
 
-func (c *kademliaServiceClient) HEAL_REPLICAS(ctx context.Context, in *HealReplicasRequest, opts ...grpc.CallOption) (*HealReplicasResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(HealReplicasResponse)
-	err := c.cc.Invoke(ctx, KademliaService_HEAL_REPLICAS_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // KademliaServiceServer is the server API for KademliaService service.
 // All implementations must embed UnimplementedKademliaServiceServer
 // for forward compatibility.
@@ -129,7 +117,6 @@ type KademliaServiceServer interface {
 	FIND_VALUE(context.Context, *LookupRequest) (*ValueResponse, error)
 	ROUTING_TABLE_DUMP(context.Context, *RoutingTableDumpRequest) (*RoutingTableDumpResponse, error)
 	DATA_DUMP(context.Context, *DataDumpRequest) (*DataDumpResponse, error)
-	HEAL_REPLICAS(context.Context, *HealReplicasRequest) (*HealReplicasResponse, error)
 	mustEmbedUnimplementedKademliaServiceServer()
 }
 
@@ -157,9 +144,6 @@ func (UnimplementedKademliaServiceServer) ROUTING_TABLE_DUMP(context.Context, *R
 }
 func (UnimplementedKademliaServiceServer) DATA_DUMP(context.Context, *DataDumpRequest) (*DataDumpResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method DATA_DUMP not implemented")
-}
-func (UnimplementedKademliaServiceServer) HEAL_REPLICAS(context.Context, *HealReplicasRequest) (*HealReplicasResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method HEAL_REPLICAS not implemented")
 }
 func (UnimplementedKademliaServiceServer) mustEmbedUnimplementedKademliaServiceServer() {}
 func (UnimplementedKademliaServiceServer) testEmbeddedByValue()                         {}
@@ -290,24 +274,6 @@ func _KademliaService_DATA_DUMP_Handler(srv interface{}, ctx context.Context, de
 	return interceptor(ctx, in, info, handler)
 }
 
-func _KademliaService_HEAL_REPLICAS_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(HealReplicasRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(KademliaServiceServer).HEAL_REPLICAS(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: KademliaService_HEAL_REPLICAS_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(KademliaServiceServer).HEAL_REPLICAS(ctx, req.(*HealReplicasRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // KademliaService_ServiceDesc is the grpc.ServiceDesc for KademliaService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -338,10 +304,6 @@ var KademliaService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "DATA_DUMP",
 			Handler:    _KademliaService_DATA_DUMP_Handler,
-		},
-		{
-			MethodName: "HEAL_REPLICAS",
-			Handler:    _KademliaService_HEAL_REPLICAS_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

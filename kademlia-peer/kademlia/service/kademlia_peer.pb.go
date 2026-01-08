@@ -393,17 +393,62 @@ func (x *LookupResponse) GetNodes() []*NodeInfoLookup {
 	return nil
 }
 
+type FoundData struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Data          map[int32]int32        `protobuf:"bytes,1,rep,name=data,proto3" json:"data,omitempty" protobuf_key:"varint,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *FoundData) Reset() {
+	*x = FoundData{}
+	mi := &file_kademlia_peer_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *FoundData) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*FoundData) ProtoMessage() {}
+
+func (x *FoundData) ProtoReflect() protoreflect.Message {
+	mi := &file_kademlia_peer_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use FoundData.ProtoReflect.Descriptor instead.
+func (*FoundData) Descriptor() ([]byte, []int) {
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *FoundData) GetData() map[int32]int32 {
+	if x != nil {
+		return x.Data
+	}
+	return nil
+}
+
 type ValueResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Value         *int32                 `protobuf:"varint,1,opt,name=value,proto3,oneof" json:"value,omitempty"`
 	Nodes         []*NodeInfoLookup      `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	Version       *int32                 `protobuf:"varint,3,opt,name=version,proto3,oneof" json:"version,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ValueResponse) Reset() {
 	*x = ValueResponse{}
-	mi := &file_kademlia_peer_proto_msgTypes[7]
+	mi := &file_kademlia_peer_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -415,7 +460,7 @@ func (x *ValueResponse) String() string {
 func (*ValueResponse) ProtoMessage() {}
 
 func (x *ValueResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[7]
+	mi := &file_kademlia_peer_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -428,7 +473,7 @@ func (x *ValueResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValueResponse.ProtoReflect.Descriptor instead.
 func (*ValueResponse) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{7}
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *ValueResponse) GetValue() int32 {
@@ -445,6 +490,13 @@ func (x *ValueResponse) GetNodes() []*NodeInfoLookup {
 	return nil
 }
 
+func (x *ValueResponse) GetVersion() int32 {
+	if x != nil && x.Version != nil {
+		return *x.Version
+	}
+	return 0
+}
+
 type RoutingTableDumpRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -453,7 +505,7 @@ type RoutingTableDumpRequest struct {
 
 func (x *RoutingTableDumpRequest) Reset() {
 	*x = RoutingTableDumpRequest{}
-	mi := &file_kademlia_peer_proto_msgTypes[8]
+	mi := &file_kademlia_peer_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -465,7 +517,7 @@ func (x *RoutingTableDumpRequest) String() string {
 func (*RoutingTableDumpRequest) ProtoMessage() {}
 
 func (x *RoutingTableDumpRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[8]
+	mi := &file_kademlia_peer_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -478,7 +530,7 @@ func (x *RoutingTableDumpRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoutingTableDumpRequest.ProtoReflect.Descriptor instead.
 func (*RoutingTableDumpRequest) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{8}
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{9}
 }
 
 type NodeInfoList struct {
@@ -490,7 +542,7 @@ type NodeInfoList struct {
 
 func (x *NodeInfoList) Reset() {
 	*x = NodeInfoList{}
-	mi := &file_kademlia_peer_proto_msgTypes[9]
+	mi := &file_kademlia_peer_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -502,7 +554,7 @@ func (x *NodeInfoList) String() string {
 func (*NodeInfoList) ProtoMessage() {}
 
 func (x *NodeInfoList) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[9]
+	mi := &file_kademlia_peer_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -515,7 +567,7 @@ func (x *NodeInfoList) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeInfoList.ProtoReflect.Descriptor instead.
 func (*NodeInfoList) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{9}
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *NodeInfoList) GetNodes() []*NodeInfo {
@@ -534,7 +586,7 @@ type RoutingTableDumpResponse struct {
 
 func (x *RoutingTableDumpResponse) Reset() {
 	*x = RoutingTableDumpResponse{}
-	mi := &file_kademlia_peer_proto_msgTypes[10]
+	mi := &file_kademlia_peer_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -546,7 +598,7 @@ func (x *RoutingTableDumpResponse) String() string {
 func (*RoutingTableDumpResponse) ProtoMessage() {}
 
 func (x *RoutingTableDumpResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[10]
+	mi := &file_kademlia_peer_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -559,7 +611,7 @@ func (x *RoutingTableDumpResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RoutingTableDumpResponse.ProtoReflect.Descriptor instead.
 func (*RoutingTableDumpResponse) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{10}
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *RoutingTableDumpResponse) GetPairs() map[uint32]*NodeInfoList {
@@ -577,7 +629,7 @@ type DataDumpRequest struct {
 
 func (x *DataDumpRequest) Reset() {
 	*x = DataDumpRequest{}
-	mi := &file_kademlia_peer_proto_msgTypes[11]
+	mi := &file_kademlia_peer_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -589,7 +641,7 @@ func (x *DataDumpRequest) String() string {
 func (*DataDumpRequest) ProtoMessage() {}
 
 func (x *DataDumpRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[11]
+	mi := &file_kademlia_peer_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -602,7 +654,7 @@ func (x *DataDumpRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DataDumpRequest.ProtoReflect.Descriptor instead.
 func (*DataDumpRequest) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{11}
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{12}
 }
 
 type DataDumpResponse struct {
@@ -615,7 +667,7 @@ type DataDumpResponse struct {
 
 func (x *DataDumpResponse) Reset() {
 	*x = DataDumpResponse{}
-	mi := &file_kademlia_peer_proto_msgTypes[12]
+	mi := &file_kademlia_peer_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -627,7 +679,7 @@ func (x *DataDumpResponse) String() string {
 func (*DataDumpResponse) ProtoMessage() {}
 
 func (x *DataDumpResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[12]
+	mi := &file_kademlia_peer_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -640,7 +692,7 @@ func (x *DataDumpResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use DataDumpResponse.ProtoReflect.Descriptor instead.
 func (*DataDumpResponse) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{12}
+	return file_kademlia_peer_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *DataDumpResponse) GetPairs() map[string]int32 {
@@ -653,126 +705,6 @@ func (x *DataDumpResponse) GetPairs() map[string]int32 {
 func (x *DataDumpResponse) GetVersions() map[string]int32 {
 	if x != nil {
 		return x.Versions
-	}
-	return nil
-}
-
-type HealReplicasRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	Key             string                 `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	Value           *int32                 `protobuf:"varint,2,opt,name=value,proto3,oneof" json:"value,omitempty"`
-	CurrentReplicas *int32                 `protobuf:"varint,3,opt,name=currentReplicas,proto3,oneof" json:"currentReplicas,omitempty"`
-	Requester       *NodeInfo              `protobuf:"bytes,4,opt,name=requester,proto3,oneof" json:"requester,omitempty"`
-	MagicCookie     *uint64                `protobuf:"varint,5,opt,name=magicCookie,proto3,oneof" json:"magicCookie,omitempty"`
-	unknownFields   protoimpl.UnknownFields
-	sizeCache       protoimpl.SizeCache
-}
-
-func (x *HealReplicasRequest) Reset() {
-	*x = HealReplicasRequest{}
-	mi := &file_kademlia_peer_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealReplicasRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealReplicasRequest) ProtoMessage() {}
-
-func (x *HealReplicasRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealReplicasRequest.ProtoReflect.Descriptor instead.
-func (*HealReplicasRequest) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *HealReplicasRequest) GetKey() string {
-	if x != nil {
-		return x.Key
-	}
-	return ""
-}
-
-func (x *HealReplicasRequest) GetValue() int32 {
-	if x != nil && x.Value != nil {
-		return *x.Value
-	}
-	return 0
-}
-
-func (x *HealReplicasRequest) GetCurrentReplicas() int32 {
-	if x != nil && x.CurrentReplicas != nil {
-		return *x.CurrentReplicas
-	}
-	return 0
-}
-
-func (x *HealReplicasRequest) GetRequester() *NodeInfo {
-	if x != nil {
-		return x.Requester
-	}
-	return nil
-}
-
-func (x *HealReplicasRequest) GetMagicCookie() uint64 {
-	if x != nil && x.MagicCookie != nil {
-		return *x.MagicCookie
-	}
-	return 0
-}
-
-type HealReplicasResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Nodes         []*NodeInfo            `protobuf:"bytes,1,rep,name=nodes,proto3" json:"nodes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HealReplicasResponse) Reset() {
-	*x = HealReplicasResponse{}
-	mi := &file_kademlia_peer_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HealReplicasResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HealReplicasResponse) ProtoMessage() {}
-
-func (x *HealReplicasResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_kademlia_peer_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HealReplicasResponse.ProtoReflect.Descriptor instead.
-func (*HealReplicasResponse) Descriptor() ([]byte, []int) {
-	return file_kademlia_peer_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *HealReplicasResponse) GetNodes() []*NodeInfo {
-	if x != nil {
-		return x.Nodes
 	}
 	return nil
 }
@@ -811,11 +743,19 @@ const file_kademlia_peer_proto_rawDesc = "" +
 	"_requesterB\x0e\n" +
 	"\f_magicCookie\"7\n" +
 	"\x0eLookupResponse\x12%\n" +
-	"\x05nodes\x18\x01 \x03(\v2\x0f.NodeInfoLookupR\x05nodes\"[\n" +
+	"\x05nodes\x18\x01 \x03(\v2\x0f.NodeInfoLookupR\x05nodes\"n\n" +
+	"\tFoundData\x12(\n" +
+	"\x04data\x18\x01 \x03(\v2\x14.FoundData.DataEntryR\x04data\x1a7\n" +
+	"\tDataEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\x05R\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\x86\x01\n" +
 	"\rValueResponse\x12\x19\n" +
 	"\x05value\x18\x01 \x01(\x05H\x00R\x05value\x88\x01\x01\x12%\n" +
-	"\x05nodes\x18\x02 \x03(\v2\x0f.NodeInfoLookupR\x05nodesB\b\n" +
-	"\x06_value\"\x19\n" +
+	"\x05nodes\x18\x02 \x03(\v2\x0f.NodeInfoLookupR\x05nodes\x12\x1d\n" +
+	"\aversion\x18\x03 \x01(\x05H\x01R\aversion\x88\x01\x01B\b\n" +
+	"\x06_valueB\n" +
+	"\n" +
+	"\b_version\"\x19\n" +
 	"\x17RoutingTableDumpRequest\"/\n" +
 	"\fNodeInfoList\x12\x1f\n" +
 	"\x05nodes\x18\x01 \x03(\v2\t.NodeInfoR\x05nodes\"\x9f\x01\n" +
@@ -835,20 +775,7 @@ const file_kademlia_peer_proto_rawDesc = "" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a;\n" +
 	"\rVersionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\"\x82\x02\n" +
-	"\x13HealReplicasRequest\x12\x10\n" +
-	"\x03key\x18\x01 \x01(\tR\x03key\x12\x19\n" +
-	"\x05value\x18\x02 \x01(\x05H\x00R\x05value\x88\x01\x01\x12-\n" +
-	"\x0fcurrentReplicas\x18\x03 \x01(\x05H\x01R\x0fcurrentReplicas\x88\x01\x01\x12,\n" +
-	"\trequester\x18\x04 \x01(\v2\t.NodeInfoH\x02R\trequester\x88\x01\x01\x12%\n" +
-	"\vmagicCookie\x18\x05 \x01(\x04H\x03R\vmagicCookie\x88\x01\x01B\b\n" +
-	"\x06_valueB\x12\n" +
-	"\x10_currentReplicasB\f\n" +
-	"\n" +
-	"_requesterB\x0e\n" +
-	"\f_magicCookie\"7\n" +
-	"\x14HealReplicasResponse\x12\x1f\n" +
-	"\x05nodes\x18\x01 \x03(\v2\t.NodeInfoR\x05nodes2\xfd\x02\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x012\xbd\x02\n" +
 	"\x0fKademliaService\x12\x1f\n" +
 	"\x04PING\x12\n" +
 	".PingCheck\x1a\t.NodeInfo\"\x00\x12(\n" +
@@ -857,8 +784,7 @@ const file_kademlia_peer_proto_rawDesc = "" +
 	"\n" +
 	"FIND_VALUE\x12\x0e.LookupRequest\x1a\x0e.ValueResponse\"\x00\x12K\n" +
 	"\x12ROUTING_TABLE_DUMP\x12\x18.RoutingTableDumpRequest\x1a\x19.RoutingTableDumpResponse\"\x00\x122\n" +
-	"\tDATA_DUMP\x12\x10.DataDumpRequest\x1a\x11.DataDumpResponse\"\x00\x12>\n" +
-	"\rHEAL_REPLICAS\x12\x14.HealReplicasRequest\x1a\x15.HealReplicasResponse\"\x00B\x12Z\x10kademlia/serviceb\x06proto3"
+	"\tDATA_DUMP\x12\x10.DataDumpRequest\x1a\x11.DataDumpResponse\"\x00B\x12Z\x10kademlia/serviceb\x06proto3"
 
 var (
 	file_kademlia_peer_proto_rawDescOnce sync.Once
@@ -881,14 +807,14 @@ var file_kademlia_peer_proto_goTypes = []any{
 	(*StoreResponse)(nil),            // 4: StoreResponse
 	(*LookupRequest)(nil),            // 5: LookupRequest
 	(*LookupResponse)(nil),           // 6: LookupResponse
-	(*ValueResponse)(nil),            // 7: ValueResponse
-	(*RoutingTableDumpRequest)(nil),  // 8: RoutingTableDumpRequest
-	(*NodeInfoList)(nil),             // 9: NodeInfoList
-	(*RoutingTableDumpResponse)(nil), // 10: RoutingTableDumpResponse
-	(*DataDumpRequest)(nil),          // 11: DataDumpRequest
-	(*DataDumpResponse)(nil),         // 12: DataDumpResponse
-	(*HealReplicasRequest)(nil),      // 13: HealReplicasRequest
-	(*HealReplicasResponse)(nil),     // 14: HealReplicasResponse
+	(*FoundData)(nil),                // 7: FoundData
+	(*ValueResponse)(nil),            // 8: ValueResponse
+	(*RoutingTableDumpRequest)(nil),  // 9: RoutingTableDumpRequest
+	(*NodeInfoList)(nil),             // 10: NodeInfoList
+	(*RoutingTableDumpResponse)(nil), // 11: RoutingTableDumpResponse
+	(*DataDumpRequest)(nil),          // 12: DataDumpRequest
+	(*DataDumpResponse)(nil),         // 13: DataDumpResponse
+	nil,                              // 14: FoundData.DataEntry
 	nil,                              // 15: RoutingTableDumpResponse.PairsEntry
 	nil,                              // 16: DataDumpResponse.PairsEntry
 	nil,                              // 17: DataDumpResponse.VersionsEntry
@@ -899,33 +825,30 @@ var file_kademlia_peer_proto_depIdxs = []int32{
 	1,  // 2: StoreResponse.dataNodes:type_name -> NodeInfoLookup
 	0,  // 3: LookupRequest.requester:type_name -> NodeInfo
 	1,  // 4: LookupResponse.nodes:type_name -> NodeInfoLookup
-	1,  // 5: ValueResponse.nodes:type_name -> NodeInfoLookup
-	0,  // 6: NodeInfoList.nodes:type_name -> NodeInfo
-	15, // 7: RoutingTableDumpResponse.pairs:type_name -> RoutingTableDumpResponse.PairsEntry
-	16, // 8: DataDumpResponse.pairs:type_name -> DataDumpResponse.PairsEntry
-	17, // 9: DataDumpResponse.versions:type_name -> DataDumpResponse.VersionsEntry
-	0,  // 10: HealReplicasRequest.requester:type_name -> NodeInfo
-	0,  // 11: HealReplicasResponse.nodes:type_name -> NodeInfo
-	9,  // 12: RoutingTableDumpResponse.PairsEntry.value:type_name -> NodeInfoList
-	2,  // 13: KademliaService.PING:input_type -> PingCheck
-	3,  // 14: KademliaService.STORE:input_type -> StoreRequest
-	5,  // 15: KademliaService.FIND_NODE:input_type -> LookupRequest
-	5,  // 16: KademliaService.FIND_VALUE:input_type -> LookupRequest
-	8,  // 17: KademliaService.ROUTING_TABLE_DUMP:input_type -> RoutingTableDumpRequest
-	11, // 18: KademliaService.DATA_DUMP:input_type -> DataDumpRequest
-	13, // 19: KademliaService.HEAL_REPLICAS:input_type -> HealReplicasRequest
-	0,  // 20: KademliaService.PING:output_type -> NodeInfo
-	4,  // 21: KademliaService.STORE:output_type -> StoreResponse
-	6,  // 22: KademliaService.FIND_NODE:output_type -> LookupResponse
-	7,  // 23: KademliaService.FIND_VALUE:output_type -> ValueResponse
-	10, // 24: KademliaService.ROUTING_TABLE_DUMP:output_type -> RoutingTableDumpResponse
-	12, // 25: KademliaService.DATA_DUMP:output_type -> DataDumpResponse
-	14, // 26: KademliaService.HEAL_REPLICAS:output_type -> HealReplicasResponse
-	20, // [20:27] is the sub-list for method output_type
-	13, // [13:20] is the sub-list for method input_type
-	13, // [13:13] is the sub-list for extension type_name
-	13, // [13:13] is the sub-list for extension extendee
-	0,  // [0:13] is the sub-list for field type_name
+	14, // 5: FoundData.data:type_name -> FoundData.DataEntry
+	1,  // 6: ValueResponse.nodes:type_name -> NodeInfoLookup
+	0,  // 7: NodeInfoList.nodes:type_name -> NodeInfo
+	15, // 8: RoutingTableDumpResponse.pairs:type_name -> RoutingTableDumpResponse.PairsEntry
+	16, // 9: DataDumpResponse.pairs:type_name -> DataDumpResponse.PairsEntry
+	17, // 10: DataDumpResponse.versions:type_name -> DataDumpResponse.VersionsEntry
+	10, // 11: RoutingTableDumpResponse.PairsEntry.value:type_name -> NodeInfoList
+	2,  // 12: KademliaService.PING:input_type -> PingCheck
+	3,  // 13: KademliaService.STORE:input_type -> StoreRequest
+	5,  // 14: KademliaService.FIND_NODE:input_type -> LookupRequest
+	5,  // 15: KademliaService.FIND_VALUE:input_type -> LookupRequest
+	9,  // 16: KademliaService.ROUTING_TABLE_DUMP:input_type -> RoutingTableDumpRequest
+	12, // 17: KademliaService.DATA_DUMP:input_type -> DataDumpRequest
+	0,  // 18: KademliaService.PING:output_type -> NodeInfo
+	4,  // 19: KademliaService.STORE:output_type -> StoreResponse
+	6,  // 20: KademliaService.FIND_NODE:output_type -> LookupResponse
+	8,  // 21: KademliaService.FIND_VALUE:output_type -> ValueResponse
+	11, // 22: KademliaService.ROUTING_TABLE_DUMP:output_type -> RoutingTableDumpResponse
+	13, // 23: KademliaService.DATA_DUMP:output_type -> DataDumpResponse
+	18, // [18:24] is the sub-list for method output_type
+	12, // [12:18] is the sub-list for method input_type
+	12, // [12:12] is the sub-list for extension type_name
+	12, // [12:12] is the sub-list for extension extendee
+	0,  // [0:12] is the sub-list for field type_name
 }
 
 func init() { file_kademlia_peer_proto_init() }
@@ -935,8 +858,7 @@ func file_kademlia_peer_proto_init() {
 	}
 	file_kademlia_peer_proto_msgTypes[3].OneofWrappers = []any{}
 	file_kademlia_peer_proto_msgTypes[5].OneofWrappers = []any{}
-	file_kademlia_peer_proto_msgTypes[7].OneofWrappers = []any{}
-	file_kademlia_peer_proto_msgTypes[13].OneofWrappers = []any{}
+	file_kademlia_peer_proto_msgTypes[8].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

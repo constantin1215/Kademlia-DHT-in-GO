@@ -45,7 +45,7 @@ func processFindNode(targetId string, magicCookie uint64, result map[string]*ks.
 	}
 }
 
-func processFindValue(targetKey string, magicCookie uint64, result map[string]*ks.NodeInfoLookup, value **int32,
+func processFindValue(targetKey string, magicCookie uint64, result map[string]*ks.NodeInfoLookup, value *int32, version *int32,
 	mutexResult *sync.Mutex, waitGroup *sync.WaitGroup, cancel *atomic.Bool, node *ks.NodeInfoLookup) {
 	defer waitGroup.Done()
 
@@ -69,8 +69,10 @@ func processFindValue(targetKey string, magicCookie uint64, result map[string]*k
 		return
 	}
 
-	if lookup.Value != nil {
-		*value = lookup.Value
+	if lookup.Value != nil && lookup.Version != nil {
+		log.Printf("Found value %v with version %v", lookup.Value, lookup.Version)
+		value = lookup.Value
+		version = lookup.Version
 		cancel.Store(true)
 		return
 	}
@@ -143,11 +145,15 @@ func findNodePool(target string, magicCookie uint64, initNodes []*ks.NodeInfoLoo
 	return resultedNodes
 }
 
-func findValuePool(request *ks.LookupRequest, magicCookie uint64, value **int32, initNodes []*ks.NodeInfoLookup) []*ks.NodeInfoLookup {
+func findValuePool(request *ks.LookupRequest, magicCookie uint64, initNodes []*ks.NodeInfoLookup) ([]*ks.NodeInfoLookup, int32, int32) {
 	result := make(map[string]*ks.NodeInfoLookup)
+
+	var value int32 = -1
+	var version int32 = 0
 
 	var wg sync.WaitGroup
 	var mutexResult sync.Mutex
+
 	cancel := atomic.Bool{}
 	cancel.Store(false)
 
@@ -160,14 +166,13 @@ func findValuePool(request *ks.LookupRequest, magicCookie uint64, value **int32,
 	}
 
 	nodesToProcess := initNodes
-
 	for {
 		j := 0
 		roundResult := make(map[string]*ks.NodeInfoLookup)
 		for {
 			for i := 0; i < alpha && j < len(nodesToProcess); i++ {
 				wg.Add(1)
-				go processFindValue(request.Target, magicCookie, roundResult, value, &mutexResult, &wg, &cancel, nodesToProcess[j])
+				go processFindValue(request.Target, magicCookie, roundResult, &value, &version, &mutexResult, &wg, &cancel, nodesToProcess[j])
 				j++
 			}
 			wg.Wait()
@@ -199,5 +204,5 @@ func findValuePool(request *ks.LookupRequest, magicCookie uint64, value **int32,
 		return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
 	})
 
-	return resultedNodes
+	return resultedNodes, value, version
 }

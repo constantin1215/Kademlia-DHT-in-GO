@@ -50,6 +50,19 @@ func loadData() {
 	log.Println("Data loaded from /etc/data/" + os.Getenv("TAG") + "_peer_data.json")
 }
 
+func saveData() {
+	filePath1 := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data.json")
+	filePath2 := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data_versions.json")
+	dataJsonString, err := json.Marshal(data)
+	versionsJsonString, err := json.Marshal(dataVersions)
+	if err != nil {
+		log.Println("Error marshalling data")
+	} else {
+		os.WriteFile(filePath1, dataJsonString, 0644)
+		os.WriteFile(filePath2, versionsJsonString, 0644)
+	}
+}
+
 func selfHealDataReplicas() {
 	for {
 		for key, value := range data {
@@ -60,7 +73,28 @@ func selfHealDataReplicas() {
 				Value:   value,
 				Version: &version,
 			})
-			time.Sleep(5 * time.Second)
+			time.Sleep(1 * time.Second)
+		}
+	}
+}
+
+func selfHealDataVersion() {
+	for {
+		for key, value := range data {
+			version := dataVersions[key]
+			log.Printf("Checking data %v = %v v.%v in the cluster for newer versions", key, value, version)
+			response, err := findInCluster(&ks.LookupRequest{
+				Target: key,
+			})
+			if err != nil {
+				continue
+			}
+			if *response.Version > version {
+				dataVersions[key] = version
+				data[key] = value
+			}
+			saveData()
+			time.Sleep(1 * time.Second)
 		}
 	}
 }
@@ -86,7 +120,7 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 			// if it has a version attached and it's bigger take that one
 			if request.Version != nil && *request.Version > dataVersions[request.Key] {
 				data[request.Key] = request.Value
-				dataVersions[request.Key] = dataVersions[request.Key]
+				dataVersions[request.Key] = *request.Version
 			} else if request.Version == nil { // otherwise optimistically update it
 				data[request.Key] = request.Value
 				dataVersions[request.Key] += 1
@@ -105,16 +139,7 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 			}
 		}
 
-		filePath1 := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data.json")
-		filePath2 := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data_versions.json")
-		dataJsonString, err := json.Marshal(data)
-		versionsJsonString, err := json.Marshal(dataVersions)
-		if err != nil {
-			log.Println("Error marshalling data")
-		} else {
-			os.WriteFile(filePath1, dataJsonString, 0644)
-			os.WriteFile(filePath2, versionsJsonString, 0644)
-		}
+		saveData()
 
 		return &ks.StoreResponse{}, nil
 	}
@@ -124,7 +149,6 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 		log.Println("ERROR: Could not find closest nodes.")
 		return &ks.StoreResponse{}, nil
 	}
-	log.Println(gatheredNodes)
 
 	result := make(map[string]*ks.NodeInfoLookup)
 	magicCookie := rand.Uint64()
@@ -203,9 +227,15 @@ func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.Lo
 
 func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.ValueResponse, error) {
 	log.Printf("FIND_VALUE: Request received: %v", request)
-	value, ok := data[request.Target]
-	if ok {
-		return &ks.ValueResponse{Value: &value}, nil
+
+	return findInCluster(request)
+}
+
+func findInCluster(request *ks.LookupRequest) (*ks.ValueResponse, error) {
+	value, okData := data[request.Target]
+	version, okVersion := dataVersions[request.Target]
+	if okData && okVersion {
+		return &ks.ValueResponse{Value: &value, Version: &version}, nil
 	}
 
 	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Target)
@@ -215,14 +245,15 @@ func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.V
 	}
 
 	result := make([]*ks.NodeInfoLookup, 0)
+	var foundValue int32 = -1
+	var foundVersion int32 = 0
 
-	var foundValue *int32
 	if request.MagicCookie == nil {
 		magicCookie := rand.Uint64()
 		for _, node := range gatheredNodes {
 			result = append(result, node)
 		}
-		result = findValuePool(request, magicCookie, &foundValue, gatheredNodes)
+		result, foundValue, foundVersion = findValuePool(request, magicCookie, gatheredNodes)
 	}
 
 	if request.Requester != nil {
@@ -234,8 +265,8 @@ func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.V
 		}
 	}
 
-	if foundValue != nil {
-		return &ks.ValueResponse{Value: foundValue}, nil
+	if foundValue != -1 && foundVersion != 0 {
+		return &ks.ValueResponse{Value: &foundValue, Version: &foundVersion}, nil
 	}
 
 	if len(result) != 0 {
@@ -265,89 +296,6 @@ func (s *server) DATA_DUMP(_ context.Context, _ *ks.DataDumpRequest) (*ks.DataDu
 	}, nil
 }
 
-func (s *server) HEAL_REPLICAS(_ context.Context, request *ks.HealReplicasRequest) (*ks.HealReplicasResponse, error) {
-	if request.MagicCookie != nil && request.Value != nil {
-		_, ok := data[request.Key]
-		if ok {
-			log.Println("Node already has this info!")
-			return nil, errors.New("node already has this info")
-		}
-		data[request.Key] = *request.Value
-
-		if request.Requester != nil {
-			requesterBucket, errDist := calculateDistance(request.Key, config.id)
-			if errDist != nil {
-				log.Printf("Could not calculate distance to requester.")
-			} else {
-				updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
-			}
-		}
-
-		filePath1 := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data.json")
-		filePath2 := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data_versions.json")
-		dataJsonString, err := json.Marshal(data)
-		versionsJsonString, err := json.Marshal(dataVersions)
-		if err != nil {
-			log.Println("Error marshalling data")
-		} else {
-			os.WriteFile(filePath1, dataJsonString, 0644)
-			os.WriteFile(filePath2, versionsJsonString, 0644)
-		}
-
-		return &ks.HealReplicasResponse{}, nil
-	}
-
-	value, ok := data[request.Key]
-	if !ok {
-		log.Printf("ERROR: This node does not have the data to heal.")
-		return &ks.HealReplicasResponse{}, nil
-	}
-
-	diff := config.k - int(*request.CurrentReplicas)
-	log.Printf("HEAL_REPLICAS: Missing %v", diff)
-
-	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Key)
-	if errClosestNodes != nil {
-		log.Println("ERROR: Could not find closest nodes.")
-		return nil, errors.New("could not find closest nodes")
-	}
-
-	result := make(map[string]*ks.NodeInfoLookup)
-	magicCookie := rand.Uint64()
-
-	for _, node := range gatheredNodes {
-		result[node.NodeDetails.Id] = node
-	}
-	resultedNodes := findNodePool(request.Key, magicCookie, gatheredNodes)
-
-	successes := 0
-	dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
-	for _, node := range resultedNodes {
-		client, conn, err := createClient(node.NodeDetails.Ip)
-		if err != nil {
-			return nil, err
-		}
-
-		_, errStore := HealReplicas(request.Key, value, magicCookie, client)
-		if errStore != nil {
-			continue
-		}
-
-		errConn := conn.Close()
-		if errConn != nil {
-			continue
-		}
-
-		successes++
-		dataNodes = append(dataNodes, node)
-		if successes == diff {
-			break
-		}
-	}
-
-	return &ks.HealReplicasResponse{}, nil
-}
-
 func startService() {
 	lis, err := net.Listen("tcp4", fmt.Sprintf(":%d", config.port))
 	if err != nil {
@@ -357,6 +305,7 @@ func startService() {
 	s := grpc.NewServer()
 	ks.RegisterKademliaServiceServer(s, &server{})
 	go selfHealDataReplicas()
+	go selfHealDataVersion()
 	log.Printf("server listening at %s", config.ip+":"+strconv.Itoa(int(config.port)))
 
 	if err := s.Serve(lis); err != nil {

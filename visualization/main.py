@@ -80,7 +80,7 @@ def main_page():
     <style>
         .container {
             display: grid;
-            grid-template-columns: 0.75fr 0.25fr;
+            grid-template-columns: 0.70fr 0.30fr;
             grid-template-rows: 1fr;
             grid-column-gap: 0px;
             grid-row-gap: 0px;

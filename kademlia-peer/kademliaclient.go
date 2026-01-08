@@ -86,17 +86,3 @@ func Store(key string, value int32, magicCookie uint64, client ks.KademliaServic
 
 	return response, nil
 }
-
-func HealReplicas(key string, value int32, magicCookie uint64, client ks.KademliaServiceClient) (*ks.HealReplicasResponse, error) {
-	log.Println("Performing HEAL_REPLICAS")
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	response, err := client.HEAL_REPLICAS(ctx, &ks.HealReplicasRequest{Key: key, Value: &value, Requester: &ks.NodeInfo{Ip: config.ip, Id: config.id, Port: config.port}, MagicCookie: &magicCookie})
-	if err != nil {
-		return nil, err
-	}
-
-	return response, nil
-}

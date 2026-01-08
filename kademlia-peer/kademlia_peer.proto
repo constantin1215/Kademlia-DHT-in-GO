@@ -8,7 +8,6 @@ service KademliaService {
         rpc FIND_VALUE (LookupRequest) returns (ValueResponse) {}
         rpc ROUTING_TABLE_DUMP (RoutingTableDumpRequest) returns (RoutingTableDumpResponse) {}
         rpc DATA_DUMP (DataDumpRequest) returns (DataDumpResponse) {}
-        rpc HEAL_REPLICAS (HealReplicasRequest) returns (HealReplicasResponse) {}
 }
 
 message NodeInfo {
@@ -47,38 +46,31 @@ message LookupResponse {
         repeated NodeInfoLookup nodes = 1;
 }
 
+message FoundData {
+        map<int32, int32> data = 1;
+}
+
 message ValueResponse {
         optional int32 value = 1;
         repeated NodeInfoLookup nodes = 2;
+        optional int32 version = 3;
 }
 
 message RoutingTableDumpRequest {
 }
 
 message NodeInfoList {
-  repeated NodeInfo nodes = 1;
+        repeated NodeInfo nodes = 1;
 }
 
 message RoutingTableDumpResponse {
-  map<uint32, NodeInfoList> pairs = 1;
+        map<uint32, NodeInfoList> pairs = 1;
 }
 
 message DataDumpRequest {
 }
 
 message DataDumpResponse {
-  map<string, int32> pairs = 1;
-  map<string, int32> versions = 2;
-}
-
-message HealReplicasRequest {
-  string key = 1;
-  optional int32 value = 2;
-  optional int32 currentReplicas = 3;
-  optional NodeInfo requester = 4;
-  optional uint64 magicCookie = 5;
-}
-
-message HealReplicasResponse {
-  repeated NodeInfo nodes = 1;
+        map<string, int32> pairs = 1;
+        map<string, int32> versions = 2;
 }
