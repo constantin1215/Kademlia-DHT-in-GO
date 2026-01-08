@@ -79,7 +79,7 @@ func findNodePool(target string, magicCookie uint64, result map[string]*ks.NodeI
 		nodeChan <- node
 	}
 
-	if WaitTimeout(&wg, 100*time.Millisecond) {
+	if WaitTimeout(&wg, 1000*time.Millisecond) {
 		fmt.Println("All workers finished within the timeout.")
 	} else {
 		fmt.Println("Timeout reached before all workers could finish.")

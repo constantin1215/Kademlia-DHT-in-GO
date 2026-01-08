@@ -64,10 +64,10 @@ class KademliaServiceStub(object):
                 request_serializer=kademlia__peer__pb2.DataDumpRequest.SerializeToString,
                 response_deserializer=kademlia__peer__pb2.DataDumpResponse.FromString,
                 _registered_method=True)
-        self.PUT = channel.unary_unary(
-                '/KademliaService/PUT',
-                request_serializer=kademlia__peer__pb2.PutRequest.SerializeToString,
-                response_deserializer=kademlia__peer__pb2.NodeInfo.FromString,
+        self.HEAL_REPLICAS = channel.unary_unary(
+                '/KademliaService/HEAL_REPLICAS',
+                request_serializer=kademlia__peer__pb2.HealReplicasRequest.SerializeToString,
+                response_deserializer=kademlia__peer__pb2.HealReplicasResponse.FromString,
                 _registered_method=True)
 
 
@@ -110,7 +110,7 @@ class KademliaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def PUT(self, request, context):
+    def HEAL_REPLICAS(self, request, context):
         """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
@@ -149,10 +149,10 @@ def add_KademliaServiceServicer_to_server(servicer, server):
                     request_deserializer=kademlia__peer__pb2.DataDumpRequest.FromString,
                     response_serializer=kademlia__peer__pb2.DataDumpResponse.SerializeToString,
             ),
-            'PUT': grpc.unary_unary_rpc_method_handler(
-                    servicer.PUT,
-                    request_deserializer=kademlia__peer__pb2.PutRequest.FromString,
-                    response_serializer=kademlia__peer__pb2.NodeInfo.SerializeToString,
+            'HEAL_REPLICAS': grpc.unary_unary_rpc_method_handler(
+                    servicer.HEAL_REPLICAS,
+                    request_deserializer=kademlia__peer__pb2.HealReplicasRequest.FromString,
+                    response_serializer=kademlia__peer__pb2.HealReplicasResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -328,7 +328,7 @@ class KademliaService(object):
             _registered_method=True)
 
     @staticmethod
-    def PUT(request,
+    def HEAL_REPLICAS(request,
             target,
             options=(),
             channel_credentials=None,
@@ -341,9 +341,9 @@ class KademliaService(object):
         return grpc.experimental.unary_unary(
             request,
             target,
-            '/KademliaService/PUT',
-            kademlia__peer__pb2.PutRequest.SerializeToString,
-            kademlia__peer__pb2.NodeInfo.FromString,
+            '/KademliaService/HEAL_REPLICAS',
+            kademlia__peer__pb2.HealReplicasRequest.SerializeToString,
+            kademlia__peer__pb2.HealReplicasResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -74,6 +74,8 @@ def main_page():
             const iframe = document.getElementById(id);
             iframe.src = iframe.src; 
         }
+        
+        setInterval(refreshIframe, 2000, 'data-frame')
     </script>
     <style>
         .container {
@@ -115,23 +117,12 @@ def main_page():
                 </iframe>
             </div>
             <div class="data-overview">
-                <button onclick="refreshIframe('data-frame')" style="
-                  margin-bottom:6px;
-                  background:#222;
-                  color:#f5f5f5;
-                  border:1px solid #444;
-                  padding:4px 10px;
-                  font-family:monospace;
-                  cursor:pointer;
-                ">
-                  refresh global data overview
-                </button>
                 <iframe
                   id="data-frame"
                   src="/data-overview"
                   style="
                     width:100%;
-                    height:95vh;
+                    height:98vh;
                     border:1px solid #333;
                     border-radius:4px;
                     background: white;
@@ -150,17 +141,19 @@ async def data_overview():
     containers = docker_api.list_kademlia_containers()
     data = {}
     nodes = {}
+    versions = {}
 
     for container in containers:
         container_data = await kademlia_client.DATA_DUMP(container)
         for key, value in container_data.pairs.items():
             data[key] = data.get(key, 0) + 1
             nodes[key] = nodes.get(key, []) + [container[0][14:-2]]
+            versions[key] = versions.get(key, []) + [str(container_data.versions.get(key, []))]
 
     rows = []
     for key in sorted(data.keys()):
         rows.append(
-            f"<tr><td>{str(key)[:6]}...</td><td>{data[key]}</td><td>{','.join(nodes[key])}</td></tr>"
+            f"<tr><td>{str(key)[:6]}...</td><td>{data[key]}</td><td>{','.join(nodes[key])}</td><td>{','.join(versions[key])}</td></tr>"
         )
 
     table_html = f"""
@@ -175,6 +168,7 @@ async def data_overview():
               <th style="border:1px solid #444; padding:6px; text-align:left;">data</th>
               <th style="border:1px solid #444; padding:6px; text-align:left;">replicas</th>
               <th style="border:1px solid #444; padding:6px; text-align:left;">nodes</th>
+              <th style="border:1px solid #444; padding:6px; text-align:left;">versions</th>
             </tr>
           </thead>
           <tbody>
@@ -219,7 +213,13 @@ async def graph():
 
     G.add_edges_from(edges)
 
-    pos = nx.circular_layout(G, scale=300)
+    nodes_sorted = sorted(G.nodes(), key=lambda x: int(x, 16))
+
+    G_sorted = nx.Graph()
+    G_sorted.add_nodes_from(nodes_sorted)
+    G_sorted.add_edges_from(G_sorted.edges())
+
+    pos = nx.circular_layout(G_sorted, scale=300)
 
     net = Network(height="600px", width="100%")
     net.toggle_physics(False)
