@@ -8,6 +8,16 @@ services:
       TAG: "A"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   B:
     image: kademlia-peer:latest
     ports:
@@ -17,6 +27,16 @@ services:
       TAG: "B"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   C:
     image: kademlia-peer:latest
     ports:
@@ -26,6 +46,16 @@ services:
       TAG: "C"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   D:
     image: kademlia-peer:latest
     ports:
@@ -35,6 +65,16 @@ services:
       TAG: "D"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   E:
     image: kademlia-peer:latest
     ports:
@@ -44,6 +84,16 @@ services:
       TAG: "E"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   F:
     image: kademlia-peer:latest
     ports:
@@ -53,6 +103,16 @@ services:
       TAG: "F"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   G:
     image: kademlia-peer:latest
     ports:
@@ -62,6 +122,16 @@ services:
       TAG: "G"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   I:
     image: kademlia-peer:latest
     ports:
@@ -71,6 +141,16 @@ services:
       TAG: "I"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   J:
     image: kademlia-peer:latest
     ports:
@@ -80,6 +160,16 @@ services:
       TAG: "J"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   K:
     image: kademlia-peer:latest
     ports:
@@ -89,6 +179,16 @@ services:
       TAG: "K"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
   L:
     image: kademlia-peer:latest
     ports:
@@ -98,5 +198,15 @@ services:
       TAG: "L"
     volumes:
       - peer-data:/etc/data
+    build:
+      context: .
+      dockerfile: Dockerfile
+    develop:
+      watch:
+        - action: sync
+          path: .
+          target: /peer
+        - action: rebuild
+          path: .
 volumes:
   peer-data:

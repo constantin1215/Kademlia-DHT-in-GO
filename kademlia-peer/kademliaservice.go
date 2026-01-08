@@ -11,7 +11,6 @@ import (
 	"os"
 	"path/filepath"
 	ks "peer/kademlia/service"
-	"sort"
 	"strconv"
 	"time"
 
@@ -55,13 +54,11 @@ func selfHealDataReplicas() {
 	for {
 		for key, value := range data {
 			version := dataVersions[key]
-			magicCookie := rand.Uint64()
 			log.Printf("Replicating %v = %v v.%v", key, value, version)
 			storeInCluster(&ks.StoreRequest{
-				Key:         key,
-				Value:       value,
-				MagicCookie: &magicCookie,
-				Version:     &version,
+				Key:     key,
+				Value:   value,
+				Version: &version,
 			})
 			time.Sleep(5 * time.Second)
 		}
@@ -127,6 +124,7 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 		log.Println("ERROR: Could not find closest nodes.")
 		return &ks.StoreResponse{}, nil
 	}
+	log.Println(gatheredNodes)
 
 	result := make(map[string]*ks.NodeInfoLookup)
 	magicCookie := rand.Uint64()
@@ -134,15 +132,7 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 	for _, node := range gatheredNodes {
 		result[node.NodeDetails.Id] = node
 	}
-	findNodePool(request.Key, magicCookie, result, gatheredNodes)
-
-	resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
-	for _, node := range result {
-		resultedNodes = append(resultedNodes, node)
-	}
-	sort.Slice(resultedNodes, func(i, j int) bool {
-		return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
-	})
+	resultedNodes := findNodePool(request.Key, magicCookie, gatheredNodes)
 
 	successes := 0
 	dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
@@ -185,14 +175,11 @@ func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.Lo
 		return &ks.LookupResponse{}, nil
 	}
 
-	result := make(map[string]*ks.NodeInfoLookup)
+	result := make([]*ks.NodeInfoLookup, 0)
 
 	if request.MagicCookie == nil {
 		magicCookie := rand.Uint64()
-		for _, node := range gatheredNodes {
-			result[node.NodeDetails.Id] = node
-		}
-		findNodePool(request.Target, magicCookie, result, gatheredNodes)
+		result = findNodePool(request.Target, magicCookie, gatheredNodes)
 	}
 
 	if request.Requester != nil {
@@ -207,16 +194,7 @@ func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.Lo
 	log.Println("Lookup finished!")
 
 	if len(result) != 0 {
-		//this implementation is shit
-		resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
-		for _, node := range result {
-			resultedNodes = append(resultedNodes, node)
-		}
-		sort.Slice(resultedNodes, func(i, j int) bool {
-			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
-		})
-		log.Println("Returned result")
-		return &ks.LookupResponse{Nodes: resultedNodes[:config.k]}, nil
+		return &ks.LookupResponse{Nodes: result[:config.k]}, nil
 	}
 
 	log.Println("Returned gathered nodes")
@@ -236,15 +214,15 @@ func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.V
 		return &ks.ValueResponse{}, nil
 	}
 
-	result := make(map[string]*ks.NodeInfoLookup)
+	result := make([]*ks.NodeInfoLookup, 0)
 
 	var foundValue *int32
 	if request.MagicCookie == nil {
 		magicCookie := rand.Uint64()
 		for _, node := range gatheredNodes {
-			result[node.NodeDetails.Id] = node
+			result = append(result, node)
 		}
-		findValuePool(request, magicCookie, result, &foundValue, gatheredNodes)
+		result = findValuePool(request, magicCookie, &foundValue, gatheredNodes)
 	}
 
 	if request.Requester != nil {
@@ -261,16 +239,7 @@ func (s *server) FIND_VALUE(_ context.Context, request *ks.LookupRequest) (*ks.V
 	}
 
 	if len(result) != 0 {
-		//this implementation is shit
-		resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
-		for _, node := range result {
-			resultedNodes = append(resultedNodes, node)
-		}
-		sort.Slice(resultedNodes, func(i, j int) bool {
-			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
-		})
-		log.Println("Returned result")
-		return &ks.ValueResponse{Nodes: resultedNodes[:config.k]}, nil
+		return &ks.ValueResponse{Nodes: result[:config.k]}, nil
 	}
 
 	return &ks.ValueResponse{Nodes: gatheredNodes}, nil
@@ -349,15 +318,7 @@ func (s *server) HEAL_REPLICAS(_ context.Context, request *ks.HealReplicasReques
 	for _, node := range gatheredNodes {
 		result[node.NodeDetails.Id] = node
 	}
-	findNodePool(request.Key, magicCookie, result, gatheredNodes)
-
-	resultedNodes := make([]*ks.NodeInfoLookup, 0, len(result))
-	for _, node := range result {
-		resultedNodes = append(resultedNodes, node)
-	}
-	sort.Slice(resultedNodes, func(i, j int) bool {
-		return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
-	})
+	resultedNodes := findNodePool(request.Key, magicCookie, gatheredNodes)
 
 	successes := 0
 	dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
