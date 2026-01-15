@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13kademlia_peer.proto\"0\n\x08NodeInfo\x12\n\n\x02ip\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\n\n\x02id\x18\x03 \x01(\t\"J\n\x0eNodeInfoLookup\x12\x1e\n\x0bnodeDetails\x18\x01 \x01(\x0b\x32\t.NodeInfo\x12\x18\n\x10\x64istanceToTarget\x18\x02 \x01(\r\"\x0b\n\tPingCheck\"\xa7\x01\n\x0cStoreRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05\x12!\n\trequester\x18\x03 \x01(\x0b\x32\t.NodeInfoH\x00\x88\x01\x01\x12\x18\n\x0bmagicCookie\x18\x04 \x01(\x04H\x01\x88\x01\x01\x12\x14\n\x07version\x18\x05 \x01(\x05H\x02\x88\x01\x01\x42\x0c\n\n_requesterB\x0e\n\x0c_magicCookieB\n\n\x08_version\"3\n\rStoreResponse\x12\"\n\tdataNodes\x18\x02 \x03(\x0b\x32\x0f.NodeInfoLookup\"z\n\rLookupRequest\x12!\n\trequester\x18\x01 \x01(\x0b\x32\t.NodeInfoH\x00\x88\x01\x01\x12\x0e\n\x06target\x18\x02 \x01(\t\x12\x18\n\x0bmagicCookie\x18\x03 \x01(\x04H\x01\x88\x01\x01\x42\x0c\n\n_requesterB\x0e\n\x0c_magicCookie\"0\n\x0eLookupResponse\x12\x1e\n\x05nodes\x18\x01 \x03(\x0b\x32\x0f.NodeInfoLookup\"o\n\rValueResponse\x12\x12\n\x05value\x18\x01 \x01(\x05H\x00\x88\x01\x01\x12\x1e\n\x05nodes\x18\x02 \x03(\x0b\x32\x0f.NodeInfoLookup\x12\x14\n\x07version\x18\x03 \x01(\x05H\x01\x88\x01\x01\x42\x08\n\x06_valueB\n\n\x08_version\"\x19\n\x17RoutingTableDumpRequest\"(\n\x0cNodeInfoList\x12\x18\n\x05nodes\x18\x01 \x03(\x0b\x32\t.NodeInfo\"\x8c\x01\n\x18RoutingTableDumpResponse\x12\x33\n\x05pairs\x18\x01 \x03(\x0b\x32$.RoutingTableDumpResponse.PairsEntry\x1a;\n\nPairsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\x1c\n\x05value\x18\x02 \x01(\x0b\x32\r.NodeInfoList:\x02\x38\x01\"\x11\n\x0f\x44\x61taDumpRequest\"\xd1\x01\n\x10\x44\x61taDumpResponse\x12+\n\x05pairs\x18\x01 \x03(\x0b\x32\x1c.DataDumpResponse.PairsEntry\x12\x31\n\x08versions\x18\x02 \x03(\x0b\x32\x1f.DataDumpResponse.VersionsEntry\x1a,\n\nPairsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a/\n\rVersionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"\xcd\x01\n\x13HealReplicasRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\x12\n\x05value\x18\x02 \x01(\x05H\x00\x88\x01\x01\x12\x1c\n\x0f\x63urrentReplicas\x18\x03 \x01(\x05H\x01\x88\x01\x01\x12!\n\trequester\x18\x04 \x01(\x0b\x32\t.NodeInfoH\x02\x88\x01\x01\x12\x18\n\x0bmagicCookie\x18\x05 \x01(\x04H\x03\x88\x01\x01\x42\x08\n\x06_valueB\x12\n\x10_currentReplicasB\x0c\n\n_requesterB\x0e\n\x0c_magicCookie\"0\n\x14HealReplicasResponse\x12\x18\n\x05nodes\x18\x01 \x03(\x0b\x32\t.NodeInfo2\xfd\x02\n\x0fKademliaService\x12\x1f\n\x04PING\x12\n.PingCheck\x1a\t.NodeInfo\"\x00\x12(\n\x05STORE\x12\r.StoreRequest\x1a\x0e.StoreResponse\"\x00\x12.\n\tFIND_NODE\x12\x0e.LookupRequest\x1a\x0f.LookupResponse\"\x00\x12.\n\nFIND_VALUE\x12\x0e.LookupRequest\x1a\x0e.ValueResponse\"\x00\x12K\n\x12ROUTING_TABLE_DUMP\x12\x18.RoutingTableDumpRequest\x1a\x19.RoutingTableDumpResponse\"\x00\x12\x32\n\tDATA_DUMP\x12\x10.DataDumpRequest\x1a\x11.DataDumpResponse\"\x00\x12>\n\rHEAL_REPLICAS\x12\x14.HealReplicasRequest\x1a\x15.HealReplicasResponse\"\x00\x42\x12Z\x10kademlia/serviceb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13kademlia_peer.proto\"0\n\x08NodeInfo\x12\n\n\x02ip\x18\x01 \x01(\t\x12\x0c\n\x04port\x18\x02 \x01(\x05\x12\n\n\x02id\x18\x03 \x01(\t\"J\n\x0eNodeInfoLookup\x12\x1e\n\x0bnodeDetails\x18\x01 \x01(\x0b\x32\t.NodeInfo\x12\x18\n\x10\x64istanceToTarget\x18\x02 \x01(\r\"\x0b\n\tPingCheck\"\xc7\x01\n\x0cStoreRequest\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05\x12!\n\trequester\x18\x03 \x01(\x0b\x32\t.NodeInfoH\x00\x88\x01\x01\x12\x18\n\x0bmagicCookie\x18\x04 \x01(\x04H\x01\x88\x01\x01\x12\x14\n\x07version\x18\x05 \x01(\x05H\x02\x88\x01\x01\x12\x13\n\x06leaser\x18\x06 \x01(\tH\x03\x88\x01\x01\x42\x0c\n\n_requesterB\x0e\n\x0c_magicCookieB\n\n\x08_versionB\t\n\x07_leaser\"3\n\rStoreResponse\x12\"\n\tdataNodes\x18\x02 \x03(\x0b\x32\x0f.NodeInfoLookup\"z\n\rLookupRequest\x12!\n\trequester\x18\x01 \x01(\x0b\x32\t.NodeInfoH\x00\x88\x01\x01\x12\x0e\n\x06target\x18\x02 \x01(\t\x12\x18\n\x0bmagicCookie\x18\x03 \x01(\x04H\x01\x88\x01\x01\x42\x0c\n\n_requesterB\x0e\n\x0c_magicCookie\"0\n\x0eLookupResponse\x12\x1e\n\x05nodes\x18\x01 \x03(\x0b\x32\x0f.NodeInfoLookup\"\\\n\tFoundData\x12\"\n\x04\x64\x61ta\x18\x01 \x03(\x0b\x32\x14.FoundData.DataEntry\x1a+\n\tDataEntry\x12\x0b\n\x03key\x18\x01 \x01(\x05\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\"o\n\rValueResponse\x12\x12\n\x05value\x18\x01 \x01(\x05H\x00\x88\x01\x01\x12\x1e\n\x05nodes\x18\x02 \x03(\x0b\x32\x0f.NodeInfoLookup\x12\x14\n\x07version\x18\x03 \x01(\x05H\x01\x88\x01\x01\x42\x08\n\x06_valueB\n\n\x08_version\"\x19\n\x17RoutingTableDumpRequest\"(\n\x0cNodeInfoList\x12\x18\n\x05nodes\x18\x01 \x03(\x0b\x32\t.NodeInfo\"\x8c\x01\n\x18RoutingTableDumpResponse\x12\x33\n\x05pairs\x18\x01 \x03(\x0b\x32$.RoutingTableDumpResponse.PairsEntry\x1a;\n\nPairsEntry\x12\x0b\n\x03key\x18\x01 \x01(\r\x12\x1c\n\x05value\x18\x02 \x01(\x0b\x32\r.NodeInfoList:\x02\x38\x01\"\x11\n\x0f\x44\x61taDumpRequest\"\xb2\x02\n\x10\x44\x61taDumpResponse\x12+\n\x05pairs\x18\x01 \x03(\x0b\x32\x1c.DataDumpResponse.PairsEntry\x12\x31\n\x08versions\x18\x02 \x03(\x0b\x32\x1f.DataDumpResponse.VersionsEntry\x12/\n\x07leasers\x18\x03 \x03(\x0b\x32\x1e.DataDumpResponse.LeasersEntry\x1a,\n\nPairsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a/\n\rVersionsEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\x05:\x02\x38\x01\x1a.\n\x0cLeasersEntry\x12\x0b\n\x03key\x18\x01 \x01(\t\x12\r\n\x05value\x18\x02 \x01(\t:\x02\x38\x01\x32\xbd\x02\n\x0fKademliaService\x12\x1f\n\x04PING\x12\n.PingCheck\x1a\t.NodeInfo\"\x00\x12(\n\x05STORE\x12\r.StoreRequest\x1a\x0e.StoreResponse\"\x00\x12.\n\tFIND_NODE\x12\x0e.LookupRequest\x1a\x0f.LookupResponse\"\x00\x12.\n\nFIND_VALUE\x12\x0e.LookupRequest\x1a\x0e.ValueResponse\"\x00\x12K\n\x12ROUTING_TABLE_DUMP\x12\x18.RoutingTableDumpRequest\x1a\x19.RoutingTableDumpResponse\"\x00\x12\x32\n\tDATA_DUMP\x12\x10.DataDumpRequest\x1a\x11.DataDumpResponse\"\x00\x42\x12Z\x10kademlia/serviceb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,12 +32,16 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'kademlia_peer_pb2', _global
 if not _descriptor._USE_C_DESCRIPTORS:
   _globals['DESCRIPTOR']._loaded_options = None
   _globals['DESCRIPTOR']._serialized_options = b'Z\020kademlia/service'
+  _globals['_FOUNDDATA_DATAENTRY']._loaded_options = None
+  _globals['_FOUNDDATA_DATAENTRY']._serialized_options = b'8\001'
   _globals['_ROUTINGTABLEDUMPRESPONSE_PAIRSENTRY']._loaded_options = None
   _globals['_ROUTINGTABLEDUMPRESPONSE_PAIRSENTRY']._serialized_options = b'8\001'
   _globals['_DATADUMPRESPONSE_PAIRSENTRY']._loaded_options = None
   _globals['_DATADUMPRESPONSE_PAIRSENTRY']._serialized_options = b'8\001'
   _globals['_DATADUMPRESPONSE_VERSIONSENTRY']._loaded_options = None
   _globals['_DATADUMPRESPONSE_VERSIONSENTRY']._serialized_options = b'8\001'
+  _globals['_DATADUMPRESPONSE_LEASERSENTRY']._loaded_options = None
+  _globals['_DATADUMPRESPONSE_LEASERSENTRY']._serialized_options = b'8\001'
   _globals['_NODEINFO']._serialized_start=23
   _globals['_NODEINFO']._serialized_end=71
   _globals['_NODEINFOLOOKUP']._serialized_start=73
@@ -45,35 +49,37 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_PINGCHECK']._serialized_start=149
   _globals['_PINGCHECK']._serialized_end=160
   _globals['_STOREREQUEST']._serialized_start=163
-  _globals['_STOREREQUEST']._serialized_end=330
-  _globals['_STORERESPONSE']._serialized_start=332
-  _globals['_STORERESPONSE']._serialized_end=383
-  _globals['_LOOKUPREQUEST']._serialized_start=385
-  _globals['_LOOKUPREQUEST']._serialized_end=507
-  _globals['_LOOKUPRESPONSE']._serialized_start=509
-  _globals['_LOOKUPRESPONSE']._serialized_end=557
-  _globals['_VALUERESPONSE']._serialized_start=559
-  _globals['_VALUERESPONSE']._serialized_end=670
-  _globals['_ROUTINGTABLEDUMPREQUEST']._serialized_start=672
-  _globals['_ROUTINGTABLEDUMPREQUEST']._serialized_end=697
-  _globals['_NODEINFOLIST']._serialized_start=699
-  _globals['_NODEINFOLIST']._serialized_end=739
-  _globals['_ROUTINGTABLEDUMPRESPONSE']._serialized_start=742
-  _globals['_ROUTINGTABLEDUMPRESPONSE']._serialized_end=882
-  _globals['_ROUTINGTABLEDUMPRESPONSE_PAIRSENTRY']._serialized_start=823
-  _globals['_ROUTINGTABLEDUMPRESPONSE_PAIRSENTRY']._serialized_end=882
-  _globals['_DATADUMPREQUEST']._serialized_start=884
-  _globals['_DATADUMPREQUEST']._serialized_end=901
-  _globals['_DATADUMPRESPONSE']._serialized_start=904
-  _globals['_DATADUMPRESPONSE']._serialized_end=1113
-  _globals['_DATADUMPRESPONSE_PAIRSENTRY']._serialized_start=1020
-  _globals['_DATADUMPRESPONSE_PAIRSENTRY']._serialized_end=1064
-  _globals['_DATADUMPRESPONSE_VERSIONSENTRY']._serialized_start=1066
-  _globals['_DATADUMPRESPONSE_VERSIONSENTRY']._serialized_end=1113
-  _globals['_HEALREPLICASREQUEST']._serialized_start=1116
-  _globals['_HEALREPLICASREQUEST']._serialized_end=1321
-  _globals['_HEALREPLICASRESPONSE']._serialized_start=1323
-  _globals['_HEALREPLICASRESPONSE']._serialized_end=1371
-  _globals['_KADEMLIASERVICE']._serialized_start=1374
-  _globals['_KADEMLIASERVICE']._serialized_end=1755
+  _globals['_STOREREQUEST']._serialized_end=362
+  _globals['_STORERESPONSE']._serialized_start=364
+  _globals['_STORERESPONSE']._serialized_end=415
+  _globals['_LOOKUPREQUEST']._serialized_start=417
+  _globals['_LOOKUPREQUEST']._serialized_end=539
+  _globals['_LOOKUPRESPONSE']._serialized_start=541
+  _globals['_LOOKUPRESPONSE']._serialized_end=589
+  _globals['_FOUNDDATA']._serialized_start=591
+  _globals['_FOUNDDATA']._serialized_end=683
+  _globals['_FOUNDDATA_DATAENTRY']._serialized_start=640
+  _globals['_FOUNDDATA_DATAENTRY']._serialized_end=683
+  _globals['_VALUERESPONSE']._serialized_start=685
+  _globals['_VALUERESPONSE']._serialized_end=796
+  _globals['_ROUTINGTABLEDUMPREQUEST']._serialized_start=798
+  _globals['_ROUTINGTABLEDUMPREQUEST']._serialized_end=823
+  _globals['_NODEINFOLIST']._serialized_start=825
+  _globals['_NODEINFOLIST']._serialized_end=865
+  _globals['_ROUTINGTABLEDUMPRESPONSE']._serialized_start=868
+  _globals['_ROUTINGTABLEDUMPRESPONSE']._serialized_end=1008
+  _globals['_ROUTINGTABLEDUMPRESPONSE_PAIRSENTRY']._serialized_start=949
+  _globals['_ROUTINGTABLEDUMPRESPONSE_PAIRSENTRY']._serialized_end=1008
+  _globals['_DATADUMPREQUEST']._serialized_start=1010
+  _globals['_DATADUMPREQUEST']._serialized_end=1027
+  _globals['_DATADUMPRESPONSE']._serialized_start=1030
+  _globals['_DATADUMPRESPONSE']._serialized_end=1336
+  _globals['_DATADUMPRESPONSE_PAIRSENTRY']._serialized_start=1195
+  _globals['_DATADUMPRESPONSE_PAIRSENTRY']._serialized_end=1239
+  _globals['_DATADUMPRESPONSE_VERSIONSENTRY']._serialized_start=1241
+  _globals['_DATADUMPRESPONSE_VERSIONSENTRY']._serialized_end=1288
+  _globals['_DATADUMPRESPONSE_LEASERSENTRY']._serialized_start=1290
+  _globals['_DATADUMPRESPONSE_LEASERSENTRY']._serialized_end=1336
+  _globals['_KADEMLIASERVICE']._serialized_start=1339
+  _globals['_KADEMLIASERVICE']._serialized_end=1656
 # @@protoc_insertion_point(module_scope)

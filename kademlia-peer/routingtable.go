@@ -4,7 +4,11 @@ import (
 	"fmt"
 	"log"
 	ks "peer/kademlia/service"
+	"sort"
+	"sync"
 )
+
+var routingTableLock = sync.Mutex{}
 
 var (
 	nodePresence = make(map[string]bool)
@@ -23,93 +27,156 @@ func initRoutingTable() map[uint16][]*ks.NodeInfo {
 }
 
 func updateRoutingTable(bucket uint16, newInfo *ks.NodeInfo, routingTable map[uint16][]*ks.NodeInfo) {
-	insertedNew := false
-	quickAccessKey := newInfo.Id
-	if len(routingTable[bucket]) == config.k {
-		log.Println("Bucket full. Checking for node to evict")
-		for i, node := range routingTable[bucket] {
-			client, conn, err := createClient(node.Ip)
-			if err != nil {
-				return
-			}
-
-			_, errPing := Ping(client)
-			if errPing != nil {
-				log.Println("Removing unresponsive node and adding it at the end of the bucket")
-				routingTable[bucket][i] = routingTable[bucket][len(routingTable[bucket])-1]
-				log.Printf("Evicted %v", routingTable[bucket][i])
-				routingTable[bucket][len(routingTable[bucket])-1] = newInfo
-				nodePresence[quickAccessKey] = true
-				_ = conn.Close()
-				insertedNew = true
-				break
-			}
-
-			_ = conn.Close()
-		}
-
-	} else {
-		_, ok := nodePresence[quickAccessKey]
+	routingTableLock.Lock()
+	if len(routingTable[bucket]) != config.k {
+		_, ok := nodePresence[newInfo.Id]
 		if !ok {
 			routingTable[bucket] = append(routingTable[bucket], newInfo)
-			nodePresence[quickAccessKey] = true
-			insertedNew = true
+			nodePresence[newInfo.Id] = true
 		}
+		routingTableLock.Unlock()
+		return
 	}
 
-	if insertedNew {
-		log.Printf("Added new node in routing table. Bucket: %d Node: %v", bucket, newInfo)
+	log.Println("Bucket full. Checking for node to evict")
+	alive := make([]*ks.NodeInfo, 0)
+	for _, node := range routingTable[bucket] {
+		client, conn, err := createClient(node.Ip)
+		if err != nil {
+			continue
+		}
+
+		_, errPing := Ping(client)
+		_ = conn.Close()
+		if errPing != nil {
+			log.Printf("Unresponsive %v", node)
+			continue
+		}
+
+		alive = append(alive, node)
 	}
+
+	alive = append(alive, newInfo)
+	if len(alive) > 1 {
+		sort.Slice(alive, func(i, j int) bool {
+			return alive[i].Id < alive[j].Id
+		})
+	}
+	if len(alive) > config.k {
+		routingTable[bucket] = alive[:config.k]
+		routingTableLock.Unlock()
+		return
+	}
+
+	routingTable[bucket] = alive
+	routingTableLock.Unlock()
 }
 
 func gatherClosestNodes(bucket uint16, requesterId string, targetId string, routingTable map[uint16][]*ks.NodeInfo) []*ks.NodeInfoLookup {
-	needed := config.k
-	index := 0
-	initialBucket := bucket
-	bucketLen := len(routingTable[bucket])
-	decrease := true
-	nodes := make([]*ks.NodeInfoLookup, 0, needed)
+	log.Println("Gathering closest nodes")
+	nodes := make([]*ks.NodeInfoLookup, 0, config.k)
 
-	for needed != 0 {
-		if index < bucketLen {
-			if routingTable[bucket][index].Id != requesterId { // skip the requesting node
-				log.Printf("Checking bucket %d index %d node %v", bucket, index, routingTable[bucket][index])
-				distanceToTarget, err := calculateDistance(targetId, routingTable[bucket][index].Id)
-				if err == nil {
-					nodes = append(nodes, &ks.NodeInfoLookup{NodeDetails: routingTable[bucket][index], DistanceToTarget: uint32(distanceToTarget)})
-					needed--
-				} else {
-					log.Printf("Error calculating distance: %v", err)
-				}
-			}
+	for nextBucket := int(bucket); nextBucket >= 0; nextBucket-- {
+		routingTableLock.Lock()
+		bucketContent, ok := routingTable[uint16(nextBucket)]
+		if !ok || len(bucketContent) == 0 {
+			routingTableLock.Unlock()
+			continue
+		}
 
-			index++
-		} else {
-			if (bucket == 0 && initialBucket == 256) || (bucket == 256 && initialBucket != 256) { // already checked all buckets
-				break
-			}
+		candidateNodes, updatedBucket := extractBucketNodes(nextBucket, bucketContent, requesterId, targetId)
+		routingTable[uint16(nextBucket)] = updatedBucket
+		routingTableLock.Unlock()
+		if len(candidateNodes) == 0 {
+			continue
+		}
 
-			if bucket == 0 { // if reached the bottom switch direction
-				decrease = false
-				bucket = initialBucket
-			}
+		remain := config.k - len(nodes)
+		if remain <= 0 {
+			continue
+		}
 
-			if decrease { // initially decrease bucket from starting point
-				bucket--
-			} else {
-				bucket++
-			}
+		if remain > len(candidateNodes) {
+			remain = len(candidateNodes)
+		}
 
-			index = 0
-			bucketLen = len(routingTable[bucket])
+		nodes = append(nodes, candidateNodes[:remain]...)
+		if len(nodes) == config.k {
+			return nodes
+		}
+	}
+
+	for nextBucket := int(bucket) + 1; nextBucket <= 256; nextBucket++ {
+		routingTableLock.Lock()
+		bucketContent, ok := routingTable[uint16(nextBucket)]
+		if !ok || len(bucketContent) == 0 {
+			routingTableLock.Unlock()
+			continue
+		}
+
+		candidateNodes, updatedBucket := extractBucketNodes(nextBucket, bucketContent, requesterId, targetId)
+		routingTable[uint16(nextBucket)] = updatedBucket
+		routingTableLock.Unlock()
+		if len(candidateNodes) == 0 {
+			continue
+		}
+
+		remain := config.k - len(nodes)
+		if remain <= 0 {
+			continue
+		}
+
+		if remain > len(candidateNodes) {
+			remain = len(candidateNodes)
+		}
+
+		nodes = append(nodes, candidateNodes[:remain]...)
+		if len(nodes) == config.k {
+			return nodes
 		}
 	}
 
 	return nodes
 }
 
-func findClosestNodes(requester *ks.NodeInfo, target string) ([]*ks.NodeInfoLookup, error) {
-	bucket, err := calculateDistance(target, config.id)
+func extractBucketNodes(bucket int, bucketContent []*ks.NodeInfo, requesterId string, targetId string) ([]*ks.NodeInfoLookup, []*ks.NodeInfo) {
+	nodes := make([]*ks.NodeInfoLookup, 0, config.k)
+	workingNodes := make([]*ks.NodeInfo, 0, config.k)
+	log.Printf("Bucket %v content: %v", bucket, bucketContent)
+	for _, candidateNode := range bucketContent {
+		if candidateNode.Id == requesterId {
+			continue
+		}
+
+		distanceToTarget, err := calculateDistance(targetId, candidateNode.Id)
+		if err != nil {
+			continue
+		}
+
+		client, conn, err := createClient(candidateNode.Ip)
+		if err != nil {
+			continue
+		}
+
+		_, errPing := Ping(client)
+		_ = conn.Close()
+		if errPing != nil {
+			log.Printf("Unresponsive %v", candidateNode)
+			continue
+		}
+
+		nodes = append(nodes, &ks.NodeInfoLookup{NodeDetails: candidateNode, DistanceToTarget: uint32(distanceToTarget)})
+		workingNodes = append(workingNodes, candidateNode)
+	}
+
+	log.Printf("Working nodes: %v", workingNodes)
+	log.Printf("New bucket %v content: %v", bucket, bucketContent)
+
+	return nodes, workingNodes
+}
+
+func findClosestNodes(requester *ks.NodeInfo, target string, routingTable map[uint16][]*ks.NodeInfo) ([]*ks.NodeInfoLookup, error) {
+	startingBucket, err := calculateDistance(target, config.id)
 	if err != nil {
 		fmt.Println("Error calculating distance, invalid character detected in node ID.")
 		return nil, err
@@ -118,10 +185,15 @@ func findClosestNodes(requester *ks.NodeInfo, target string) ([]*ks.NodeInfoLook
 	var gatheredNodes []*ks.NodeInfoLookup
 
 	if requester != nil {
-		gatheredNodes = gatherClosestNodes(bucket, requester.Id, target, config.routingTable)
+		gatheredNodes = gatherClosestNodes(startingBucket, requester.Id, target, routingTable)
 	} else {
-		gatheredNodes = gatherClosestNodes(bucket, "", target, config.routingTable)
+		gatheredNodes = gatherClosestNodes(startingBucket, "", target, routingTable)
 	}
+
+	if len(gatheredNodes) == 0 {
+		joinNetwork()
+	}
+
 	log.Printf("Gathered nodes %v", gatheredNodes)
 	return gatheredNodes, nil
 }

@@ -30,6 +30,7 @@ message StoreRequest {
         optional NodeInfo requester = 3;
         optional uint64 magicCookie = 4;
         optional int32 version = 5;
+        optional string leaser = 6;
 }
 
 message StoreResponse {
@@ -73,4 +74,5 @@ message DataDumpRequest {
 message DataDumpResponse {
         map<string, int32> pairs = 1;
         map<string, int32> versions = 2;
+        map<string, string> leasers = 3;
 }

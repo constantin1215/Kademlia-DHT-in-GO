@@ -62,6 +62,14 @@ async def node_data(id: str):
             return json.loads(MessageToJson(result))
     return None
 
+@app.get("/node-routing-table")
+async def node_routing_table(id: str):
+    for node_id in node_container_info.keys():
+        if id == node_id:
+            result = await kademlia_client.ROUTING_TABLE_DUMP(node_container_info[node_id])
+            return json.loads(MessageToJson(result))
+    return None
+
 @app.get("/", response_class=HTMLResponse)
 def main_page():
     return """
@@ -137,67 +145,72 @@ def main_page():
 
 @app.get("/data-overview", response_class=HTMLResponse)
 async def data_overview():
-    docker_api = DockerAPI()
-    containers = docker_api.list_kademlia_containers()
-    data = {}
-    nodes = {}
-    versions = {}
+    try:
+        docker_api = DockerAPI()
+        containers = docker_api.list_kademlia_containers()
+        data = {}
+        nodes = {}
+        versions = {}
 
-    for container in containers:
-        container_data = await kademlia_client.DATA_DUMP(container)
-        for key, value in container_data.pairs.items():
-            data[key] = data.get(key, 0) + 1
-            nodes[key] = nodes.get(key, []) + [container[0][14:-2]]
-            versions[key] = versions.get(key, []) + [str(container_data.versions.get(key, []))]
+        for container in containers:
+            container_data = await kademlia_client.DATA_DUMP(container)
+            container_details = await kademlia_client.PING(container)
+            for key, value in container_data.pairs.items():
+                data[key] = data.get(key, 0) + 1
+                leaser = "*" if container_details.id in container_data.leasers.get(key, []) else ""
+                nodes[key] = nodes.get(key, []) + [container[0][14:-2] + leaser]
+                versions[key] = versions.get(key, []) + [str(container_data.versions.get(key, []))]
 
-    rows = []
-    for key in sorted(data.keys()):
-        rows.append(
-            f"<tr><td>{str(key)[:6]}...</td><td>{data[key]}</td><td>{','.join(nodes[key])}</td><td>{','.join(versions[key])}</td></tr>"
-        )
+        rows = []
+        for key in sorted(data.keys()):
+            rows.append(
+                f"<tr><td>{str(key)[:6]}...</td><td>{data[key]}</td><td>{','.join(nodes[key])}</td><td>{','.join(versions[key])}</td></tr>"
+            )
 
-    table_html = f"""
-        <table style="
-            width:100%;
-            border-collapse: collapse;
-            font-family: monospace;
-            font-size: 13px;
-        ">
-          <thead>
-            <tr>
-              <th style="border:1px solid #444; padding:6px; text-align:left;">data</th>
-              <th style="border:1px solid #444; padding:6px; text-align:left;">replicas</th>
-              <th style="border:1px solid #444; padding:6px; text-align:left;">nodes</th>
-              <th style="border:1px solid #444; padding:6px; text-align:left;">versions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {''.join(rows)}
-          </tbody>
-        </table>
+        table_html = f"""
+            <div style="border:1px solid #444; padding:6px; text-align:center; font-family:monospace; font-size:13px;">Global Data View</div>
+            <table style="
+                width:100%;
+                border-collapse: collapse;
+                font-family: monospace;
+                font-size: 13px;
+            ">
+              <thead>
+                <tr>
+                  <th style="border:1px solid #444; padding:6px; text-align:left;">data</th>
+                  <th style="border:1px solid #444; padding:6px; text-align:left;">replicas</th>
+                  <th style="border:1px solid #444; padding:6px; text-align:left;">nodes</th>
+                  <th style="border:1px solid #444; padding:6px; text-align:left;">versions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {''.join(rows)}
+              </tbody>
+            </table>
+            """
+
+        return f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Data Overview</title>
+        </head>
+        <body style="margin:0; padding:10px; background:#0d0d0d; color:#f5f5f5;">
+          {table_html}
+        </body>
+        </html>
         """
-
-    return f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta charset="utf-8">
-      <title>Data Overview</title>
-    </head>
-    <body style="margin:0; padding:10px; background:#0d0d0d; color:#f5f5f5;">
-      {table_html}
-    </body>
-    </html>
-    """
+    except:
+        traceback.print_exc()
+        return "Loading..."
 
 @app.get("/graph", response_class=HTMLResponse)
 async def graph():
     docker_api = DockerAPI()
     containers = docker_api.list_kademlia_containers()
 
-    print(containers)
-
-    G = nx.Graph()
+    G = nx.DiGraph()
     edges = []
 
     for container in containers:
@@ -215,13 +228,13 @@ async def graph():
 
     nodes_sorted = sorted(G.nodes(), key=lambda x: int(x, 16))
 
-    G_sorted = nx.Graph()
+    G_sorted = nx.DiGraph()
     G_sorted.add_nodes_from(nodes_sorted)
     G_sorted.add_edges_from(G_sorted.edges())
 
     pos = nx.circular_layout(G_sorted, scale=300)
 
-    net = Network(height="600px", width="100%")
+    net = Network(height="600px", width="100%", directed=True)
     net.toggle_physics(False)
 
     for node, (x, y) in pos.items():

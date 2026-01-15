@@ -2,20 +2,21 @@ show_edges_on_click_js = """
 <script type="text/javascript">
 network.on("selectNode", function (params) {
     var nodeId = params.nodes[0];
-    var connectedEdges = network.getConnectedEdges(nodeId);
 
     edges.forEach(function(edge) {
-        edges.update({id: edge.id, hidden: true});
+        edges.update({ id: edge.id, hidden: true });
     });
 
-    connectedEdges.forEach(function(edgeId) {
-        edges.update({id: edgeId, hidden: false});
+    edges.forEach(function(edge) {
+        if (edge.from === nodeId) {
+            edges.update({ id: edge.id, hidden: false });
+        }
     });
 });
 
 network.on("deselectNode", function () {
     edges.forEach(function(edge) {
-        edges.update({id: edge.id, hidden: true});
+        edges.update({ id: edge.id, hidden: true });
     });
 });
 </script>
@@ -46,6 +47,7 @@ menu_html = """
 
   <button onclick="trigger_ping()">PING</button>
   <button onclick="trigger_data_dump()">SHOW DATA</button>
+  <button onclick="trigger_routing_table_dump()">SHOW ROUTING TABLE</button>
 
   <label for="target-node-select">Target node:</label><br/>
   <select id="target-node-select"></select>
@@ -77,6 +79,12 @@ async function trigger_data_dump() {
     const response = await fetch(`/node-data?id=${selectedNodeID}`);
     const data = await response.json();
     append_to_terminal("DATA_DUMP " + selectedNodeID, data);
+}
+
+async function trigger_routing_table_dump() {
+    const response = await fetch(`/node-routing-table?id=${selectedNodeID}`);
+    const data = await response.json();
+    append_to_terminal("ROUTING_TABLE_DUMP " + selectedNodeID, data);
 }
 
 async function trigger_find_node() {

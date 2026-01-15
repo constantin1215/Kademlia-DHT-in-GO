@@ -176,6 +176,7 @@ type StoreRequest struct {
 	Requester     *NodeInfo              `protobuf:"bytes,3,opt,name=requester,proto3,oneof" json:"requester,omitempty"`
 	MagicCookie   *uint64                `protobuf:"varint,4,opt,name=magicCookie,proto3,oneof" json:"magicCookie,omitempty"`
 	Version       *int32                 `protobuf:"varint,5,opt,name=version,proto3,oneof" json:"version,omitempty"`
+	Leaser        *string                `protobuf:"bytes,6,opt,name=leaser,proto3,oneof" json:"leaser,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -243,6 +244,13 @@ func (x *StoreRequest) GetVersion() int32 {
 		return *x.Version
 	}
 	return 0
+}
+
+func (x *StoreRequest) GetLeaser() string {
+	if x != nil && x.Leaser != nil {
+		return *x.Leaser
+	}
+	return ""
 }
 
 type StoreResponse struct {
@@ -661,6 +669,7 @@ type DataDumpResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Pairs         map[string]int32       `protobuf:"bytes,1,rep,name=pairs,proto3" json:"pairs,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
 	Versions      map[string]int32       `protobuf:"bytes,2,rep,name=versions,proto3" json:"versions,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"varint,2,opt,name=value"`
+	Leasers       map[string]string      `protobuf:"bytes,3,rep,name=leasers,proto3" json:"leasers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -709,6 +718,13 @@ func (x *DataDumpResponse) GetVersions() map[string]int32 {
 	return nil
 }
 
+func (x *DataDumpResponse) GetLeasers() map[string]string {
+	if x != nil {
+		return x.Leasers
+	}
+	return nil
+}
+
 var File_kademlia_peer_proto protoreflect.FileDescriptor
 
 const file_kademlia_peer_proto_rawDesc = "" +
@@ -721,18 +737,20 @@ const file_kademlia_peer_proto_rawDesc = "" +
 	"\x0eNodeInfoLookup\x12+\n" +
 	"\vnodeDetails\x18\x01 \x01(\v2\t.NodeInfoR\vnodeDetails\x12*\n" +
 	"\x10distanceToTarget\x18\x02 \x01(\rR\x10distanceToTarget\"\v\n" +
-	"\tPingCheck\"\xd4\x01\n" +
+	"\tPingCheck\"\xfc\x01\n" +
 	"\fStoreRequest\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value\x12,\n" +
 	"\trequester\x18\x03 \x01(\v2\t.NodeInfoH\x00R\trequester\x88\x01\x01\x12%\n" +
 	"\vmagicCookie\x18\x04 \x01(\x04H\x01R\vmagicCookie\x88\x01\x01\x12\x1d\n" +
-	"\aversion\x18\x05 \x01(\x05H\x02R\aversion\x88\x01\x01B\f\n" +
+	"\aversion\x18\x05 \x01(\x05H\x02R\aversion\x88\x01\x01\x12\x1b\n" +
+	"\x06leaser\x18\x06 \x01(\tH\x03R\x06leaser\x88\x01\x01B\f\n" +
 	"\n" +
 	"_requesterB\x0e\n" +
 	"\f_magicCookieB\n" +
 	"\n" +
-	"\b_version\">\n" +
+	"\b_versionB\t\n" +
+	"\a_leaser\">\n" +
 	"\rStoreResponse\x12-\n" +
 	"\tdataNodes\x18\x02 \x03(\v2\x0f.NodeInfoLookupR\tdataNodes\"\x9a\x01\n" +
 	"\rLookupRequest\x12,\n" +
@@ -765,17 +783,21 @@ const file_kademlia_peer_proto_rawDesc = "" +
 	"PairsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\rR\x03key\x12#\n" +
 	"\x05value\x18\x02 \x01(\v2\r.NodeInfoListR\x05value:\x028\x01\"\x11\n" +
-	"\x0fDataDumpRequest\"\xfa\x01\n" +
+	"\x0fDataDumpRequest\"\xf0\x02\n" +
 	"\x10DataDumpResponse\x122\n" +
 	"\x05pairs\x18\x01 \x03(\v2\x1c.DataDumpResponse.PairsEntryR\x05pairs\x12;\n" +
-	"\bversions\x18\x02 \x03(\v2\x1f.DataDumpResponse.VersionsEntryR\bversions\x1a8\n" +
+	"\bversions\x18\x02 \x03(\v2\x1f.DataDumpResponse.VersionsEntryR\bversions\x128\n" +
+	"\aleasers\x18\x03 \x03(\v2\x1e.DataDumpResponse.LeasersEntryR\aleasers\x1a8\n" +
 	"\n" +
 	"PairsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a;\n" +
 	"\rVersionsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x012\xbd\x02\n" +
+	"\x05value\x18\x02 \x01(\x05R\x05value:\x028\x01\x1a:\n" +
+	"\fLeasersEntry\x12\x10\n" +
+	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x012\xbd\x02\n" +
 	"\x0fKademliaService\x12\x1f\n" +
 	"\x04PING\x12\n" +
 	".PingCheck\x1a\t.NodeInfo\"\x00\x12(\n" +
@@ -798,7 +820,7 @@ func file_kademlia_peer_proto_rawDescGZIP() []byte {
 	return file_kademlia_peer_proto_rawDescData
 }
 
-var file_kademlia_peer_proto_msgTypes = make([]protoimpl.MessageInfo, 18)
+var file_kademlia_peer_proto_msgTypes = make([]protoimpl.MessageInfo, 19)
 var file_kademlia_peer_proto_goTypes = []any{
 	(*NodeInfo)(nil),                 // 0: NodeInfo
 	(*NodeInfoLookup)(nil),           // 1: NodeInfoLookup
@@ -818,6 +840,7 @@ var file_kademlia_peer_proto_goTypes = []any{
 	nil,                              // 15: RoutingTableDumpResponse.PairsEntry
 	nil,                              // 16: DataDumpResponse.PairsEntry
 	nil,                              // 17: DataDumpResponse.VersionsEntry
+	nil,                              // 18: DataDumpResponse.LeasersEntry
 }
 var file_kademlia_peer_proto_depIdxs = []int32{
 	0,  // 0: NodeInfoLookup.nodeDetails:type_name -> NodeInfo
@@ -831,24 +854,25 @@ var file_kademlia_peer_proto_depIdxs = []int32{
 	15, // 8: RoutingTableDumpResponse.pairs:type_name -> RoutingTableDumpResponse.PairsEntry
 	16, // 9: DataDumpResponse.pairs:type_name -> DataDumpResponse.PairsEntry
 	17, // 10: DataDumpResponse.versions:type_name -> DataDumpResponse.VersionsEntry
-	10, // 11: RoutingTableDumpResponse.PairsEntry.value:type_name -> NodeInfoList
-	2,  // 12: KademliaService.PING:input_type -> PingCheck
-	3,  // 13: KademliaService.STORE:input_type -> StoreRequest
-	5,  // 14: KademliaService.FIND_NODE:input_type -> LookupRequest
-	5,  // 15: KademliaService.FIND_VALUE:input_type -> LookupRequest
-	9,  // 16: KademliaService.ROUTING_TABLE_DUMP:input_type -> RoutingTableDumpRequest
-	12, // 17: KademliaService.DATA_DUMP:input_type -> DataDumpRequest
-	0,  // 18: KademliaService.PING:output_type -> NodeInfo
-	4,  // 19: KademliaService.STORE:output_type -> StoreResponse
-	6,  // 20: KademliaService.FIND_NODE:output_type -> LookupResponse
-	8,  // 21: KademliaService.FIND_VALUE:output_type -> ValueResponse
-	11, // 22: KademliaService.ROUTING_TABLE_DUMP:output_type -> RoutingTableDumpResponse
-	13, // 23: KademliaService.DATA_DUMP:output_type -> DataDumpResponse
-	18, // [18:24] is the sub-list for method output_type
-	12, // [12:18] is the sub-list for method input_type
-	12, // [12:12] is the sub-list for extension type_name
-	12, // [12:12] is the sub-list for extension extendee
-	0,  // [0:12] is the sub-list for field type_name
+	18, // 11: DataDumpResponse.leasers:type_name -> DataDumpResponse.LeasersEntry
+	10, // 12: RoutingTableDumpResponse.PairsEntry.value:type_name -> NodeInfoList
+	2,  // 13: KademliaService.PING:input_type -> PingCheck
+	3,  // 14: KademliaService.STORE:input_type -> StoreRequest
+	5,  // 15: KademliaService.FIND_NODE:input_type -> LookupRequest
+	5,  // 16: KademliaService.FIND_VALUE:input_type -> LookupRequest
+	9,  // 17: KademliaService.ROUTING_TABLE_DUMP:input_type -> RoutingTableDumpRequest
+	12, // 18: KademliaService.DATA_DUMP:input_type -> DataDumpRequest
+	0,  // 19: KademliaService.PING:output_type -> NodeInfo
+	4,  // 20: KademliaService.STORE:output_type -> StoreResponse
+	6,  // 21: KademliaService.FIND_NODE:output_type -> LookupResponse
+	8,  // 22: KademliaService.FIND_VALUE:output_type -> ValueResponse
+	11, // 23: KademliaService.ROUTING_TABLE_DUMP:output_type -> RoutingTableDumpResponse
+	13, // 24: KademliaService.DATA_DUMP:output_type -> DataDumpResponse
+	19, // [19:25] is the sub-list for method output_type
+	13, // [13:19] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_kademlia_peer_proto_init() }
@@ -865,7 +889,7 @@ func file_kademlia_peer_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_kademlia_peer_proto_rawDesc), len(file_kademlia_peer_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   18,
+			NumMessages:   19,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

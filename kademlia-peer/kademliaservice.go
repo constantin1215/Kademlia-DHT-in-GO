@@ -12,13 +12,17 @@ import (
 	"path/filepath"
 	ks "peer/kademlia/service"
 	"strconv"
+	"sync"
 	"time"
 
 	"google.golang.org/grpc"
 )
 
+var dataLock = sync.Mutex{}
+
 var data = make(map[string]int32)
 var dataVersions = make(map[string]int32)
+var dataLeaser = make(map[string]string)
 
 func loadData() {
 	dataFile, err := os.ReadFile("/etc/data/" + os.Getenv("TAG") + "_peer_data.json")
@@ -51,49 +55,40 @@ func loadData() {
 }
 
 func saveData() {
-	filePath1 := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data.json")
-	filePath2 := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data_versions.json")
+	filePathData := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data.json")
+	filePathVersions := filepath.Join("/etc/data", os.Getenv("TAG")+"_peer_data_versions.json")
 	dataJsonString, err := json.Marshal(data)
 	versionsJsonString, err := json.Marshal(dataVersions)
+
 	if err != nil {
 		log.Println("Error marshalling data")
 	} else {
-		os.WriteFile(filePath1, dataJsonString, 0644)
-		os.WriteFile(filePath2, versionsJsonString, 0644)
+		os.WriteFile(filePathData, dataJsonString, 0644)
+		os.WriteFile(filePathVersions, versionsJsonString, 0644)
 	}
 }
 
 func selfHealDataReplicas() {
+	// initial delay so the the node's routing table is stable
+	time.Sleep(5 * time.Second)
 	for {
 		for key, value := range data {
+			dataLock.Lock()
+			leaser, ok := dataLeaser[key]
+			if !ok || leaser != config.id {
+				dataLock.Unlock()
+				continue
+			}
+
 			version := dataVersions[key]
+			dataLock.Unlock()
 			log.Printf("Replicating %v = %v v.%v", key, value, version)
 			storeInCluster(&ks.StoreRequest{
 				Key:     key,
 				Value:   value,
 				Version: &version,
+				Leaser:  &config.id,
 			})
-			time.Sleep(1 * time.Second)
-		}
-	}
-}
-
-func selfHealDataVersion() {
-	for {
-		for key, value := range data {
-			version := dataVersions[key]
-			log.Printf("Checking data %v = %v v.%v in the cluster for newer versions", key, value, version)
-			response, err := findInCluster(&ks.LookupRequest{
-				Target: key,
-			})
-			if err != nil {
-				continue
-			}
-			if *response.Version > version {
-				dataVersions[key] = version
-				data[key] = value
-			}
-			saveData()
 			time.Sleep(1 * time.Second)
 		}
 	}
@@ -115,36 +110,33 @@ func (s *server) STORE(_ context.Context, request *ks.StoreRequest) (*ks.StoreRe
 
 func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 	if request.MagicCookie != nil {
+		leaseOk := checkLease(request)
+		if !leaseOk {
+			trackRequester(request.Requester)
+			return &ks.StoreResponse{}, nil
+		}
+
+		dataLock.Lock()
 		_, ok := data[request.Key]
-		if ok {
-			// if it has a version attached and it's bigger take that one
-			if request.Version != nil && *request.Version > dataVersions[request.Key] {
-				data[request.Key] = request.Value
-				dataVersions[request.Key] = *request.Version
-			} else if request.Version == nil { // otherwise optimistically update it
-				data[request.Key] = request.Value
-				dataVersions[request.Key] += 1
-			}
-		} else {
+		if !ok {
 			data[request.Key] = request.Value
+		}
+
+		if request.Version == nil {
 			dataVersions[request.Key] = 1
+		} else {
+			dataVersions[request.Key] = *request.Version
 		}
 
-		if request.Requester != nil {
-			requesterBucket, errDist := calculateDistance(request.Key, config.id)
-			if errDist != nil {
-				log.Printf("Could not calculate distance to requester.")
-			} else {
-				updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
-			}
-		}
+		dataLock.Unlock()
 
-		saveData()
+		trackRequester(request.Requester)
+		//saveData()
 
 		return &ks.StoreResponse{}, nil
 	}
 
-	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Key)
+	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Key, config.routingTable)
 	if errClosestNodes != nil {
 		log.Println("ERROR: Could not find closest nodes.")
 		return &ks.StoreResponse{}, nil
@@ -159,6 +151,10 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 	resultedNodes := findNodePool(request.Key, magicCookie, gatheredNodes)
 
 	successes := 0
+	replicas := config.k
+	if request.Leaser != nil {
+		replicas = config.k - 1
+	}
 	dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
 	for _, node := range resultedNodes {
 		client, conn, err := createClient(node.NodeDetails.Ip)
@@ -166,7 +162,7 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 			return nil, err
 		}
 
-		_, errStore := Store(request.Key, request.Value, magicCookie, client, request.Version)
+		_, errStore := Store(request.Key, request.Value, magicCookie, client, request.Version, request.Leaser)
 		if errStore != nil {
 			continue
 		}
@@ -178,7 +174,7 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 
 		successes++
 		dataNodes = append(dataNodes, node)
-		if successes == config.k {
+		if successes == replicas {
 			break
 		}
 	}
@@ -190,10 +186,45 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 	return &ks.StoreResponse{DataNodes: dataNodes}, nil
 }
 
+func checkLease(request *ks.StoreRequest) bool {
+	if request.Leaser == nil { // if I receive a store without leaser
+		dataLock.Lock()
+		dataLeaser[request.Key] = config.id // I become the leaser optimistically
+		dataLock.Unlock()
+		return true
+	} else { // tie break  between leasers
+		dataLock.Lock()
+		myDist, err := calculateDistance(config.id, request.Key)
+		reqDist, err := calculateDistance(request.Requester.Id, request.Key)
+		if err != nil {
+			return false
+		}
+
+		if myDist == reqDist {
+			if config.id < request.Requester.Id {
+				dataLeaser[request.Key] = config.id
+			} else {
+				dataLeaser[request.Key] = *request.Leaser
+			}
+		}
+
+		if myDist < reqDist {
+			dataLeaser[request.Key] = config.id
+		}
+
+		if reqDist < myDist {
+			dataLeaser[request.Key] = *request.Leaser
+		}
+
+		dataLock.Unlock()
+		return true
+	}
+}
+
 func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.LookupResponse, error) {
 	log.Printf("FIND_NODE: Request received: %v", request)
 
-	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Target)
+	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Target, config.routingTable)
 	if errClosestNodes != nil {
 		log.Println("ERROR: Could not find closest nodes.")
 		return &ks.LookupResponse{}, nil
@@ -206,14 +237,7 @@ func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.Lo
 		result = findNodePool(request.Target, magicCookie, gatheredNodes)
 	}
 
-	if request.Requester != nil {
-		requesterBucket, errDist := calculateDistance(request.Target, config.id)
-		if errDist != nil {
-			log.Printf("Could not calculate distance to requester.")
-		} else {
-			updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
-		}
-	}
+	trackRequester(request.Requester)
 
 	log.Println("Lookup finished!")
 
@@ -238,7 +262,7 @@ func findInCluster(request *ks.LookupRequest) (*ks.ValueResponse, error) {
 		return &ks.ValueResponse{Value: &value, Version: &version}, nil
 	}
 
-	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Target)
+	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Target, config.routingTable)
 	if errClosestNodes != nil {
 		log.Println("ERROR: Could not find closest nodes.")
 		return &ks.ValueResponse{}, nil
@@ -256,14 +280,7 @@ func findInCluster(request *ks.LookupRequest) (*ks.ValueResponse, error) {
 		result, foundValue, foundVersion = findValuePool(request, magicCookie, gatheredNodes)
 	}
 
-	if request.Requester != nil {
-		requesterBucket, errDist := calculateDistance(request.Target, config.id)
-		if errDist != nil {
-			log.Printf("Could not calculate distance to requester.")
-		} else {
-			updateRoutingTable(requesterBucket, request.Requester, config.routingTable)
-		}
-	}
+	trackRequester(request.Requester)
 
 	if foundValue != -1 && foundVersion != 0 {
 		return &ks.ValueResponse{Value: &foundValue, Version: &foundVersion}, nil
@@ -274,6 +291,17 @@ func findInCluster(request *ks.LookupRequest) (*ks.ValueResponse, error) {
 	}
 
 	return &ks.ValueResponse{Nodes: gatheredNodes}, nil
+}
+
+func trackRequester(requester *ks.NodeInfo) {
+	if requester != nil {
+		requesterBucket, errDist := calculateDistance(requester.Id, config.id)
+		if errDist != nil {
+			log.Printf("Could not calculate distance to requester.")
+		} else {
+			updateRoutingTable(requesterBucket, requester, config.routingTable)
+		}
+	}
 }
 
 func (s *server) ROUTING_TABLE_DUMP(_ context.Context, _ *ks.RoutingTableDumpRequest) (*ks.RoutingTableDumpResponse, error) {
@@ -293,6 +321,7 @@ func (s *server) DATA_DUMP(_ context.Context, _ *ks.DataDumpRequest) (*ks.DataDu
 	return &ks.DataDumpResponse{
 		Pairs:    data,
 		Versions: dataVersions,
+		Leasers:  dataLeaser,
 	}, nil
 }
 
@@ -305,7 +334,7 @@ func startService() {
 	s := grpc.NewServer()
 	ks.RegisterKademliaServiceServer(s, &server{})
 	go selfHealDataReplicas()
-	go selfHealDataVersion()
+	//go selfHealDataVersion()
 	log.Printf("server listening at %s", config.ip+":"+strconv.Itoa(int(config.port)))
 
 	if err := s.Serve(lis); err != nil {

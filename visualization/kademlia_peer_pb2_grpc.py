@@ -64,11 +64,6 @@ class KademliaServiceStub(object):
                 request_serializer=kademlia__peer__pb2.DataDumpRequest.SerializeToString,
                 response_deserializer=kademlia__peer__pb2.DataDumpResponse.FromString,
                 _registered_method=True)
-        self.HEAL_REPLICAS = channel.unary_unary(
-                '/KademliaService/HEAL_REPLICAS',
-                request_serializer=kademlia__peer__pb2.HealReplicasRequest.SerializeToString,
-                response_deserializer=kademlia__peer__pb2.HealReplicasResponse.FromString,
-                _registered_method=True)
 
 
 class KademliaServiceServicer(object):
@@ -110,12 +105,6 @@ class KademliaServiceServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
-    def HEAL_REPLICAS(self, request, context):
-        """Missing associated documentation comment in .proto file."""
-        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
-        context.set_details('Method not implemented!')
-        raise NotImplementedError('Method not implemented!')
-
 
 def add_KademliaServiceServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -148,11 +137,6 @@ def add_KademliaServiceServicer_to_server(servicer, server):
                     servicer.DATA_DUMP,
                     request_deserializer=kademlia__peer__pb2.DataDumpRequest.FromString,
                     response_serializer=kademlia__peer__pb2.DataDumpResponse.SerializeToString,
-            ),
-            'HEAL_REPLICAS': grpc.unary_unary_rpc_method_handler(
-                    servicer.HEAL_REPLICAS,
-                    request_deserializer=kademlia__peer__pb2.HealReplicasRequest.FromString,
-                    response_serializer=kademlia__peer__pb2.HealReplicasResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -317,33 +301,6 @@ class KademliaService(object):
             '/KademliaService/DATA_DUMP',
             kademlia__peer__pb2.DataDumpRequest.SerializeToString,
             kademlia__peer__pb2.DataDumpResponse.FromString,
-            options,
-            channel_credentials,
-            insecure,
-            call_credentials,
-            compression,
-            wait_for_ready,
-            timeout,
-            metadata,
-            _registered_method=True)
-
-    @staticmethod
-    def HEAL_REPLICAS(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
-        return grpc.experimental.unary_unary(
-            request,
-            target,
-            '/KademliaService/HEAL_REPLICAS',
-            kademlia__peer__pb2.HealReplicasRequest.SerializeToString,
-            kademlia__peer__pb2.HealReplicasResponse.FromString,
             options,
             channel_credentials,
             insecure,
