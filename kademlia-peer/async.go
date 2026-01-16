@@ -132,7 +132,10 @@ func findNodePool(target string, magicCookie uint64, initNodes []*ks.NodeInfoLoo
 	}
 	resultedNodes := slices.Collect(maps.Values(result))
 	sort.Slice(resultedNodes, func(i, j int) bool {
-		return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget && resultedNodes[i].NodeDetails.Id < resultedNodes[j].NodeDetails.Id
+		if resultedNodes[i].DistanceToTarget != resultedNodes[j].DistanceToTarget {
+			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
+		}
+		return resultedNodes[i].NodeDetails.Id < resultedNodes[j].NodeDetails.Id
 	})
 
 	return resultedNodes
@@ -194,7 +197,10 @@ func findValuePool(request *ks.LookupRequest, magicCookie uint64, initNodes []*k
 
 	resultedNodes := slices.Collect(maps.Values(result))
 	sort.Slice(resultedNodes, func(i, j int) bool {
-		return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget && resultedNodes[i].NodeDetails.Id < resultedNodes[j].NodeDetails.Id
+		if resultedNodes[i].DistanceToTarget != resultedNodes[j].DistanceToTarget {
+			return resultedNodes[i].DistanceToTarget < resultedNodes[j].DistanceToTarget
+		}
+		return resultedNodes[i].NodeDetails.Id < resultedNodes[j].NodeDetails.Id
 	})
 
 	return resultedNodes, value, version

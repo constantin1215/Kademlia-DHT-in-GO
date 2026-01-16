@@ -149,7 +149,8 @@ async def data_overview():
     try:
         docker_api = DockerAPI()
         containers = docker_api.list_kademlia_containers()
-        data = {}
+        replicas = {}
+        values = {}
         nodes = {}
         versions = {}
 
@@ -157,15 +158,16 @@ async def data_overview():
             container_data = await kademlia_client.DATA_DUMP(container)
             container_details = await kademlia_client.PING(container)
             for key, value in container_data.pairs.items():
-                data[key] = data.get(key, 0) + 1
+                replicas[key] = replicas.get(key, 0) + 1
                 leaser = "*" if container_details.id in container_data.leasers.get(key, []) else ""
                 nodes[key] = nodes.get(key, []) + [container[0][14:-2] + leaser]
                 versions[key] = versions.get(key, []) + [str(container_data.versions.get(key, []))]
+                values[key] = values.get(key, []) + [str(container_data.pairs.get(key, []))]
 
         rows = []
-        for key in sorted(data.keys()):
+        for key in sorted(replicas.keys()):
             rows.append(
-                f"<tr><td>{str(key)[:6]}...</td><td>{data[key]}</td><td>{','.join(nodes[key])}</td><td>{','.join(versions[key])}</td></tr>"
+                f"<tr><td>{str(key)[:6]}...</td><td>{','.join(values[key])}</td><<td>{replicas[key]}</td><td>{','.join(nodes[key])}</td><td>{','.join(versions[key])}</td></tr>"
             )
 
         table_html = f"""
@@ -179,6 +181,7 @@ async def data_overview():
               <thead>
                 <tr>
                   <th style="border:1px solid #444; padding:6px; text-align:left;">data</th>
+                  <th style="border:1px solid #444; padding:6px; text-align:left;">values</th>
                   <th style="border:1px solid #444; padding:6px; text-align:left;">replicas</th>
                   <th style="border:1px solid #444; padding:6px; text-align:left;">nodes</th>
                   <th style="border:1px solid #444; padding:6px; text-align:left;">versions</th>

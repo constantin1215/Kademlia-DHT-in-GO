@@ -91,24 +91,53 @@ func selfHealDataReplicas() {
 				continue
 			}
 
-			leaser, ok := dataLeaser[key]
-			if !ok || leaser != config.id {
+			leaser, hasLeaser := dataLeaser[key]
+			refreshTime, hasRefresh := dataRefreshTime[key]
+			dataLock.Unlock()
+
+			now := time.Now().UnixMilli()
+			timeout := int64(30_000)
+			shouldClaim := false
+
+			log.Printf("Will timeout in %d ms", timeout-(now-refreshTime))
+			if !hasLeaser || leaser == "" {
+				shouldClaim = true
+			} else if hasRefresh && (now-refreshTime) > timeout {
+				shouldClaim = true
+			} else {
+				myDist, err1 := calculateDistance(config.id, key)
+				leaserDist, err2 := calculateDistance(leaser, key)
+				if err1 == nil && err2 == nil {
+					if myDist < leaserDist {
+						shouldClaim = true
+					} else if myDist == leaserDist && config.id < leaser {
+						shouldClaim = true
+					}
+				}
+			}
+
+			if shouldClaim {
+				dataLock.Lock()
+				dataLeaser[key] = config.id
 				dataLock.Unlock()
+				leaser = config.id
+			}
+
+			if leaser != config.id {
 				continue
 			}
 
+			dataLock.Lock()
 			version := dataVersions[key]
 			dataLock.Unlock()
 
-			go func(k string, v int32, ver *int32) {
-				log.Printf("Replicating %v = %v v.%v", k, v, ver)
-				_, _ = storeInCluster(&ks.StoreRequest{
-					Key:     k,
-					Value:   v,
-					Version: ver,
-					Leaser:  &config.id,
-				})
-			}(key, value, &version)
+			log.Printf("Replicating %v = %v v.%v", key, value, version)
+			_, _ = storeInCluster(&ks.StoreRequest{
+				Key:     key,
+				Value:   value,
+				Version: &version,
+				Leaser:  &config.id,
+			})
 		}
 	}
 }
@@ -136,28 +165,46 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 			return &ks.StoreResponse{}, nil
 		}
 
+		var currentVersion int32
+
 		dataLock.Lock()
-		_, ok := data[request.Key]
-		if !ok {
+		defer dataLock.Unlock()
+		if dataLeaser[request.Key] == config.id {
+			if request.Version == nil {
+				if v, ok := dataVersions[request.Key]; ok {
+					currentVersion = v + 1
+				} else {
+					currentVersion = 1
+				}
+			} else {
+				currentVersion = *request.Version
+			}
+			dataVersions[request.Key] = currentVersion
+			data[request.Key] = request.Value
+		} else {
+			if request.Version == nil {
+				return &ks.StoreResponse{}, nil
+			}
+
+			currentVersion = *request.Version
+			existingVersion, hasVersion := dataVersions[request.Key]
+
+			if hasVersion && currentVersion < existingVersion {
+				return &ks.StoreResponse{}, nil
+			}
+
+			dataVersions[request.Key] = currentVersion
 			data[request.Key] = request.Value
 		}
 
-		if request.Version == nil {
-			dataVersions[request.Key] = 1
-		} else {
-			dataVersions[request.Key] = *request.Version
-		}
-
-		dataLock.Unlock()
-
 		trackRequester(request.Requester)
-		//saveData()
+		saveData()
 
 		return &ks.StoreResponse{}, nil
 	}
 
 	gatheredNodes, errClosestNodes := findClosestNodes(request.Requester, request.Key, config.routingTable)
-	if errClosestNodes != nil {
+	if errClosestNodes != nil || len(gatheredNodes) == 0 {
 		log.Println("ERROR: Could not find closest nodes.")
 		return &ks.StoreResponse{}, nil
 	}
@@ -166,10 +213,6 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 	resultedNodes := findNodePool(request.Key, magicCookie, gatheredNodes)
 
 	var selectedLeaser string
-	successes := 0
-	replicas := config.k
-	dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
-
 	if request.Leaser != nil {
 		selectedLeaser = *request.Leaser
 	} else {
@@ -180,7 +223,7 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 			if err != nil {
 				continue
 			}
-			if dist < minDist {
+			if dist < minDist || (dist == minDist && node.NodeDetails.Id < closestNode.Id) {
 				minDist = dist
 				closestNode = node.NodeDetails
 			}
@@ -188,22 +231,16 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 		selectedLeaser = closestNode.Id
 	}
 
+	successes := 0
+	replicas := config.k
+	dataNodes := make([]*ks.NodeInfoLookup, 0, config.k)
+
 	for _, node := range resultedNodes {
 		if successes >= replicas {
 			break
 		}
 
 		if node.NodeDetails.Id == config.id {
-			dataLock.Lock()
-			data[request.Key] = request.Value
-			if request.Version == nil {
-				dataVersions[request.Key] = 1
-			} else {
-				dataVersions[request.Key] = *request.Version
-			}
-			dataLeaser[request.Key] = selectedLeaser
-			dataLock.Unlock()
-
 			successes++
 			dataNodes = append(dataNodes, node)
 			continue
@@ -238,14 +275,77 @@ func storeInCluster(request *ks.StoreRequest) (*ks.StoreResponse, error) {
 }
 
 func checkLease(request *ks.StoreRequest) bool {
-	if request.Leaser == nil {
+	if request.Leaser == nil || request.Requester == nil {
 		return false
 	}
 
+	key := request.Key
+	incomingLeaser := *request.Leaser
+
+	log.Printf("Checking incoming leaser %v", incomingLeaser)
+
 	dataLock.Lock()
-	defer dataLock.Unlock()
-	dataLeaser[request.Key] = *request.Leaser
-	return true
+	currentLeaser, hasLeaser := dataLeaser[key]
+	dataLock.Unlock()
+
+	if hasLeaser {
+		log.Printf("Current leaser %v", currentLeaser)
+	}
+
+	if !hasLeaser || currentLeaser == "" {
+		dataLock.Lock()
+		dataLeaser[key] = incomingLeaser
+		dataLock.Unlock()
+		log.Printf("Set leaser to %v", incomingLeaser)
+		return true
+	}
+
+	if incomingLeaser == currentLeaser {
+		return true
+	}
+
+	currentDist, err1 := calculateDistance(currentLeaser, key)
+	incomingDist, err2 := calculateDistance(incomingLeaser, key)
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	log.Printf("Comparing incoming leaser dist %v with current leaser dist %v", incomingDist, currentDist)
+
+	if incomingDist < currentDist || (incomingDist == currentDist && incomingLeaser < currentLeaser) {
+
+		log.Printf("Yielding key %s: %s -> %s", key, currentLeaser, incomingLeaser)
+
+		dataLock.Lock()
+		delete(data, key)
+		delete(dataVersions, key)
+		delete(dataRefreshTime, key)
+		delete(dataLeaser, key)
+		dataLock.Unlock()
+
+		return true
+	}
+
+	log.Printf("Forcing yield of false leaser %s (real %s) for key %s", incomingLeaser, currentLeaser, key)
+
+	client, conn, err := createClient(request.Requester.Ip)
+	if err == nil {
+		defer conn.Close()
+
+		magicCookie := rand.Uint64()
+
+		_, _ = Store(
+			key,
+			0,
+			magicCookie,
+			client,
+			nil,
+			&currentLeaser,
+		)
+		return false
+	}
+
+	return false
 }
 
 func (s *server) FIND_NODE(_ context.Context, request *ks.LookupRequest) (*ks.LookupResponse, error) {

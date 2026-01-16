@@ -11,10 +11,9 @@ import (
 )
 
 func createClient(peerIp string) (ks.KademliaServiceClient, *grpc.ClientConn, error) {
-	log.Printf("Connecting to node at %s", peerIp)
+	//log.Printf("Connecting to node at %s", peerIp)
 	var opts []grpc.DialOption
 
-	//add TLS later
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 	conn, err := grpc.NewClient(peerIp+":7777", opts...)
@@ -29,7 +28,7 @@ func createClient(peerIp string) (ks.KademliaServiceClient, *grpc.ClientConn, er
 }
 
 func Ping(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
-	log.Println("Performing PING")
+	//log.Println("Performing PING")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
@@ -40,7 +39,7 @@ func Ping(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
 		return nil, err
 	}
 
-	log.Println("Received node info: ", pingResult)
+	//log.Println("Received node info: ", pingResult)
 
 	return pingResult, nil
 }

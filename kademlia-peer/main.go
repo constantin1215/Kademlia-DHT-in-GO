@@ -2,9 +2,7 @@ package main
 
 import (
 	"log"
-	"os"
 	ks "peer/kademlia/service"
-	"strconv"
 )
 
 type Config struct {
@@ -19,20 +17,14 @@ var config = Config{
 	id:           "",
 	ip:           getIP(),
 	port:         7777,
-	k:            3,
+	k:            4,
 	routingTable: nil,
 }
 
 func main() {
 	config.id = calculateNodeId()
-	k, err := strconv.Atoi(os.Getenv("K"))
-	if err != nil {
-		log.Println("K is not an integer. Will use default K=3")
-		k = 3
-	}
-	config.k = k
 	config.routingTable = initRoutingTable()
-	//loadData()
+	loadData()
 	log.Printf("Kademlia node(%s, %s, %d)", config.id, config.ip, config.port)
 	go joinNetwork()
 	startService()
