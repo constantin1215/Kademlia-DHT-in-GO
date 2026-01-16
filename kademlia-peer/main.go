@@ -34,6 +34,6 @@ func main() {
 	config.routingTable = initRoutingTable()
 	//loadData()
 	log.Printf("Kademlia node(%s, %s, %d)", config.id, config.ip, config.port)
-	joinNetwork()
+	go joinNetwork()
 	startService()
 }

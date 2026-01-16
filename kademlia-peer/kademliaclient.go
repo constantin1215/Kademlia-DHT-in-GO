@@ -36,7 +36,7 @@ func Ping(client ks.KademliaServiceClient) (*ks.NodeInfo, error) {
 
 	pingResult, err := client.PING(ctx, &ks.PingCheck{})
 	if err != nil {
-		log.Println("Failed to perform PING")
+		log.Println("Failed to perform PING", err)
 		return nil, err
 	}
 

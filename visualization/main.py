@@ -1,4 +1,5 @@
 import json
+import traceback
 
 import networkx as nx
 from dotenv import load_dotenv

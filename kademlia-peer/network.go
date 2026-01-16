@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	ks "peer/kademlia/service"
 	"strings"
+	"time"
 )
 
 func getIP() string {
@@ -41,6 +42,8 @@ func scanNetwork() ([]string, error) {
 }
 
 func joinNetwork() {
+	seconds := time.Duration(2 + rand.IntN(4))
+	time.Sleep(seconds * time.Second)
 	log.Println("Joining network...")
 	networkIps, err := scanNetwork()
 	if err != nil {

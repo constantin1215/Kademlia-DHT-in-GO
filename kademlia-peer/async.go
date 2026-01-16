@@ -23,17 +23,13 @@ func processFindNode(targetId string, magicCookie uint64, result map[string]*ks.
 	mutexResult.Unlock()
 
 	client, conn, errClient := createClient(node.NodeDetails.Ip)
+	defer conn.Close()
 	if errClient != nil {
 		return
 	}
 
 	lookup, errLookup := LookupNode(targetId, magicCookie, client)
 	if errLookup != nil {
-		return
-	}
-
-	errConn := conn.Close()
-	if errConn != nil {
 		return
 	}
 
@@ -56,16 +52,13 @@ func processFindValue(targetKey string, magicCookie uint64, result map[string]*k
 	mutexResult.Unlock()
 
 	client, conn, errClient := createClient(node.NodeDetails.Ip)
+	defer conn.Close()
 	if errClient != nil {
 		return
 	}
 
 	lookup, errLookup := LookupValue(targetKey, magicCookie, client)
 	if errLookup != nil {
-		return
-	}
-	errConn := conn.Close()
-	if errConn != nil {
 		return
 	}
 
